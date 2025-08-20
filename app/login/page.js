@@ -1,3 +1,14 @@
 export default function Login() {
-  return <h1>Login Page</h1>;
+    return (
+        <>
+            <div className="row">
+                <div className="col-md-6">
+                    <h2>Login Page</h2>
+                </div>
+                <div className="col-md-6">
+                    <h2>Login Page</h2>
+                </div>
+            </div>
+        </>
+    )
 }
