@@ -1,0 +1,130 @@
+/* Import Tailwind CSS - tailwind v4 syntax */
+@import "tailwindcss";
+
+/* Define the dark variant in Tailwind v4 */
+@custom-variant dark (.dark &);
+
+/* Critical styles to prevent flash - these must be first */
+html {
+  background-color: #ffffff; /* Default light background */
+  transition: background-color 0s; /* No transition initially */
+}
+
+html.dark {
+  background-color: #0a0a0a !important; /* Dark background */
+  color: #ededed !important;
+}
+
+/* Style loading spinner based on theme */
+html[data-theme-loaded] div:has(svg[role="status"]) {
+  background-color: var(--background) !important;
+}
+
+html[data-theme-loaded] svg[role="status"] {
+  color: var(--foreground) !important;
+}
+
+/* Define light mode (default) variables */
+:root {
+  color-scheme: light;
+  /* ensures native widgets match */
+  --background: #ffffff;
+  --foreground: #171717;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-poppins);
+}
+
+/* Dark mode variables */
+:root.dark {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+/* Layout density variations */
+.density-compact {
+  --spacing-unit: 0.75rem;
+}
+
+.density-comfortable {
+  --spacing-unit: 1rem;
+}
+
+.density-spacious {
+  --spacing-unit: 1.5rem;
+}
+
+/* Prevent theme flash during page transitions */
+html:not(.theme-transition-ready) * {
+  transition: none !important;
+}
+
+/* More aggressive no transitions during initial page load */
+html.no-transitions * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Set immediate background color for html and body to prevent flash */
+html, body {
+  background-color: var(--background);
+  transition-property: background-color, color;
+  transition-duration: 200ms;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}
+
+/* Utility bridge so you can rely on consistent cards/inputs across pages */
+@layer components {
+  .card {
+    @apply rounded-lg border bg-white shadow dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-200 text-gray-900 dark:text-gray-100 dark:border-gray-700;
+  }
+
+  .card-body {
+    @apply p-6 text-gray-800 dark:text-gray-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-0;
+  }
+
+  .btn-muted {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700;
+  }
+
+  .input {
+    @apply block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500;
+  }
+
+  .table-root {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+  }
+
+  .table-head {
+    @apply bg-gray-50 dark:bg-gray-700;
+  }
+
+  .table-th {
+    @apply px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700 dark:text-gray-200;
+  }
+
+  .table-body {
+    @apply bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700;
+  }
+}
+
+/* Safety net: in case a component ships only `bg-white` without a dark variant */
+/* This prevents white patches under dark mode without touching every component */
+:root.dark .bg-white { background-color: rgb(31 41 55 / 1) !important; } /* gray-800 */
+:root.dark .text-gray-900 { color: rgb(243 244 246 / 1) !important; } /* gray-100 */
