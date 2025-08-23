@@ -16,17 +16,39 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-//   const router = useRouter();
-  const { login, loginWithGoogle, sendOTP } = useAuth();
+  //   const router = useRouter();
+  const { login, loginWithGoogle, sendOTP, verifyOTP } = useAuth();
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
 
+
+  const validateEmail = (email: string) => {
+    if (!email.trim()) return 'Email or 10-digit mobile number is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!emailRegex.test(email) && !phoneRegex.test(email)) {
+      return 'Enter valid email or 10-digit mobile number';
+    }
+    return '';
+  };
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+
+    // Real-time validation
+    const error = validateEmail(value);
+    setEmailError(error);
+  };
   const handleSendOTP = async () => {
-    if (!email.trim()) {
-      alert('Please enter your email or mobile number');
+    const emailValidationError = validateEmail(email);
+    if (emailValidationError) {
+      setEmailError(emailValidationError);
       return;
     }
 
@@ -50,6 +72,7 @@ function LoginContent() {
         setIsLoading(false);
         alert('Failed to send OTP. Please try again.');
       }
+      setEmailError('');
     } catch (error) {
       setIsLoading(false);
       console.error('OTP send error:', error);
@@ -59,24 +82,31 @@ function LoginContent() {
 
   const handleVerifyOTP = async () => {
     if (!otp.trim()) {
-      alert('Please enter the OTP sent to your email/mobile');
-      return;
+      return setOtpError('Please enter the OTP sent to your email/mobile');
     }
-
+    if (otp.length !== 6) {
+      return setOtpError('OTP must be 6 digits');
+    }
     setIsLoading(true);
 
     try {
-      // In a real app, call the verifyOTP function from auth context
-      // For demo, just simulate verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // ✅ CORRECT: Use verifyOTP from auth context
+      const isValid = await verifyOTP(email, otp);
 
-      setIsLoading(false);
-      await login(email);
-      // Router push is handled by the auth context
+      if (isValid) {
+        // OTP verification successful, now login
+        setIsLoading(false);
+        await login(email);
+        // Router push is handled by the auth context
+      } else {
+        // OTP verification failed
+        setIsLoading(false);
+        setOtpError('Invalid OTP. Please try again.');
+      }
     } catch (error) {
       setIsLoading(false);
       console.error('OTP verification error:', error);
-      alert('Invalid OTP. Please try again.');
+      alert('An error occurred during OTP verification. Please try again.');
     }
   };
 
@@ -138,9 +168,12 @@ function LoginContent() {
               className={styles.formInput}
               placeholder="Enter your email or mobile number"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               required
             />
+            {emailError && (
+              <p className='error-email mt-3 text-red-500'>{emailError}</p>
+            )}
           </div>
 
           {otpSent && (
@@ -151,10 +184,19 @@ function LoginContent() {
                 id="otp"
                 className={styles.formInput}
                 placeholder="Enter 6-digit OTP"
+                maxLength={6}
+                inputMode="numeric"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  setOtp(value);
+                  setOtpError(''); // Clear error when typing
+                }}
                 required
               />
+              {otpError && (
+                <p className='error-otp mt-3 text-red-500'>{otpError}</p>
+              )}
             </div>
           )}
 
