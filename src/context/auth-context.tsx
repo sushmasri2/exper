@@ -1,219 +1,179 @@
 "use client";
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { requestOTP, verifyOTP, AuthResponse } from '@/lib/api-client';
 
+// Define the shape of the user object
 interface User {
   id: string;
-  email: string;
   name?: string;
-  role: 'admin' | 'editor' | 'viewer';
+  email: string;
+  avatar?: string;
+  token?: string;
 }
 
+// Define the shape of the auth context
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;
-  login: (email: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  isAuthenticated: boolean;
+  sendOTP: (email: string) => Promise<{ success: boolean; message: string }>;
+  verifyAndLogin: (email: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
-  sendOTP: (email: string) => Promise<boolean>;
-  verifyOTP: (email: string, otp: string) => Promise<boolean>;
+  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Create the context with a default undefined value
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    // Check for stored auth token
-    const checkAuth = async () => {
-      try {
-        // Use a safer approach with try-catch for localStorage in case of SSR
-        let token = null;
-        let storedEmail = null;
-
-        if (typeof window !== 'undefined') {
-          token = localStorage.getItem('auth-token');
-          storedEmail = localStorage.getItem('user-email');
-        }
-
-        if (token) {
-          try {
-            // In a real app, validate the token with your API
-            // For now, just simulate a successful auth check
-            const mockUser = {
-              id: '123',
-              email: storedEmail || 'user@example.com',
-              role: 'admin' as const,
-            };
-            setUser(mockUser);
-          } catch (error) {
-            console.error('Auth verification failed:', error);
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('auth-token');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    // Redirect logic for protected and public routes
-    if (!isLoading) {
-      // Routes that don't require authentication
-      const publicRoutes = ['/login', '/register', '/forgot-password'];
-      const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
-      const isRootRoute = pathname === '/';
-
-      if (user && (isPublicRoute || isRootRoute)) {
-        // Redirect to dashboard if already logged in and accessing public route
-        router.replace('/dashboard');
-      } else if (!user && isRootRoute) {
-        // Redirect to login if not authenticated and accessing root route
-        router.replace('/login');
-      }
-      // Note: Other redirections for protected routes are now handled by ProtectedRoute component
-    }
-  }, [user, isLoading, pathname, router]);
-
-  const login = async (email: string): Promise<void> => {
-    setIsLoading(true);
-
-    try {
-      // In a real app, make an API call here
-      // For now, simulate a successful login
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const mockUser = {
-        id: '123',
-        email,
-        role: 'admin' as const,
-      };
-
-      localStorage.setItem('auth-token', 'mock-jwt-token');
-      localStorage.setItem('user-email', email);
-
-      setUser(mockUser);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loginWithGoogle = async (): Promise<void> => {
-    setIsLoading(true);
-
-    try {
-      // In a real app, implement Google OAuth
-      // For now, simulate a successful Google login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const mockUser = {
-        id: '456',
-        email: 'google-user@example.com',
-        name: 'Google User',
-        role: 'editor' as const,
-      };
-
-      localStorage.setItem('auth-token', 'mock-google-jwt-token');
-      localStorage.setItem('user-email', mockUser.email);
-
-      setUser(mockUser);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Google login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    setIsLoading(true);
-
-    try {
-      // In a real app, invalidate the token on the server
-      // For now, just clear local storage
-      localStorage.removeItem('auth-token');
-      localStorage.removeItem('user-email');
-
-      setUser(null);
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const sendOTP = async (email: string): Promise<boolean> => {
-    try {
-      // In a real app, make an API call to send an OTP
-      console.log(`Sending OTP to ${email}`);
-      // For now, simulate a successful OTP send
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return true;
-    } catch (error) {
-      console.error('Failed to send OTP:', error);
-      return false;
-    }
-  };
-
-  const verifyOTP = async (email: string, otp: string): Promise<boolean> => {
-    try {
-      // In a real app, verify the OTP with your API
-      // For now, accept any OTP (in real app, NEVER do this!)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      if (otp === '123456') {
-        // Mock successful verification
-        return true;
-      } else {
-        // Mock failed verification
-        return false;
-      }
-    } catch (error) {
-      console.error('OTP verification failed:', error);
-      return false;
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        login,
-        loginWithGoogle,
-        logout,
-        sendOTP,
-        verifyOTP
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
+// Custom hook to use the auth context
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+// Create a more secure storage utility
+const createSecureStorage = (key: string) => {
+  // In a real app, you might use a library like 'secure-ls' or encrypt data.
+  // For this example, we'll use a simple abstraction over localStorage.
+  return {
+    setItem: (value: string) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+    },
+    getItem: (): string | null => {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+      return null;
+    },
+    removeItem: () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+    },
+  };
 };
+
+const userStorage = createSecureStorage('medai_user');
+
+// Try to get user synchronously from storage if possible
+const getInitialUser = (): User | null => {
+  if (typeof window === 'undefined') return null;
+
+  const storedUser = userStorage.getItem();
+  if (!storedUser) return null;
+
+  try {
+    return JSON.parse(storedUser);
+  } catch (error) {
+    console.error("Failed to parse user from storage", error);
+    return null;
+  }
+};
+
+// AuthProvider component
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // Initialize with data from storage if available to prevent unnecessary loading states
+  const [user, setUser] = useState<User | null>(getInitialUser());
+  // Start with loading=false if we already have a user
+  const [loading, setLoading] = useState(!user);
+  const router = useRouter();
+
+  useEffect(() => {
+    // If we already have a user from initial state, no need to reload
+    if (user) return;
+
+    const storedUser = userStorage.getItem();
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse user from storage", error);
+        userStorage.removeItem();
+      }
+    }
+    setLoading(false);
+  }, [user]);
+
+  const sendOTP = async (email: string) => {
+    setLoading(true);
+    try {
+      const result = await requestOTP(email);
+      setLoading(false);
+      return result;
+    } catch (error) {
+      setLoading(false);
+      console.error("Failed to send OTP", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to send OTP'
+      };
+    }
+  };
+
+  const verifyAndLogin = async (email: string, otp: string) => {
+    setLoading(true);
+    try {
+      const result = await verifyOTP(email, otp);
+
+      if ('success' in result && result.success === false) {
+        setLoading(false);
+        return { success: false, message: result.message };
+      }
+
+      // We know this is AuthResponse now
+      const authResponse = result as AuthResponse;
+
+      const userData: User = {
+        id: authResponse.user.id,
+        email: authResponse.user.email,
+        name: authResponse.user.name,
+        avatar: authResponse.user.avatar,
+        token: authResponse.token
+      };
+
+      setUser(userData);
+      userStorage.setItem(JSON.stringify(userData));
+      setLoading(false);
+      router.push('/dashboard');
+      return { success: true };
+    } catch (error) {
+      setLoading(false);
+      console.error("Failed to verify OTP", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to verify OTP'
+      };
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+
+    setUser(null);
+    userStorage.removeItem();
+    setLoading(false);
+    router.push('/login');
+  };
+
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    sendOTP,
+    verifyAndLogin,
+    logout,
+    loading,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
