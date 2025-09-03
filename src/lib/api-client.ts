@@ -11,12 +11,12 @@ const API_BASE_URL = 'https://csapi-staging.medvarsity.com';
  */
 export async function fetchWithHeaders(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers || {});
-  
+
   // Add required headers
   headers.set('X-Requested-With', 'cms');
   headers.set('Content-Type', 'application/json');
   headers.set('Accept', 'application/json');
-  
+
   // Add access token if available
   const accessToken = sessionStorage.getItem('accessToken');
   if (accessToken) {
@@ -51,7 +51,7 @@ async function refreshToken(): Promise<string | null> {
         return data.accessToken;
       }
     }
-    
+
     return null;
   } catch (error) {
     console.error('Token refresh failed:', error);
@@ -71,12 +71,12 @@ export async function makeAuthenticatedRequest<T>(
   // If unauthorized, try to refresh token and retry once
   if (response.status === 401) {
     const newToken = await refreshToken();
-    
+
     if (newToken) {
       // Update headers with new token
       const headers = new Headers(options.headers || {});
       headers.set('Authorization', `Bearer ${newToken}`);
-      
+
       // Retry the request
       response = await fetchWithHeaders(`${API_BASE_URL}${endpoint}`, {
         ...options,
@@ -176,12 +176,12 @@ export async function requestMobileOTP(mobile: string): Promise<{ success: boole
  * Verify OTP and login
  */
 export async function verifyOTP(
-  identifier: string, 
-  otp: string, 
+  identifier: string,
+  otp: string,
   type: 'email' | 'mobile'
 ): Promise<AuthResponse | { success: false; message: string }> {
   try {
-    const body = type === 'email' 
+    const body = type === 'email'
       ? { email: identifier, otp, purpose: 'login' }
       : { mobile: identifier, otp, purpose: 'login' };
 
@@ -219,7 +219,7 @@ export async function verifyOTP(
  */
 export async function googleLogin(id_token: string): Promise<AuthResponse | { success: false; message: string }> {
   try {
-    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/google/callback`, {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/google/`, {
       method: 'POST',
       body: JSON.stringify({ id_token }),
     });
@@ -243,9 +243,9 @@ export async function googleLogin(id_token: string): Promise<AuthResponse | { su
     };
   } catch (error) {
     console.error('Google login error:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'Google login failed' 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Google login failed'
     };
   }
 }
@@ -256,18 +256,18 @@ export async function googleLogin(id_token: string): Promise<AuthResponse | { su
 export async function checkSession(): Promise<{ user: any } | null> {
   try {
     const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/session`);
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       // Update access token if provided
       if (data.accessToken) {
         sessionStorage.setItem('accessToken', data.accessToken);
       }
-      
+
       return data;
     }
-    
+
     return null;
   } catch (error) {
     console.error('Session check failed:', error);
@@ -283,7 +283,7 @@ export async function logoutUser(): Promise<void> {
     await fetchWithHeaders(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
     });
-    
+
     sessionStorage.removeItem('accessToken');
     showToast('Logged out successfully', 'success');
   } catch (error) {

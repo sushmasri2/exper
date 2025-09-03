@@ -27,6 +27,7 @@ function LoginContent() {
   const [otp, setOtp] = useState('');
   const [detectedType, setDetectedType] = useState<'email' | 'mobile' | 'invalid'>('invalid');
   const [formattedValue, setFormattedValue] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
 
   // UI states
   const [isLoading, setIsLoading] = useState(false);
@@ -99,13 +100,57 @@ function LoginContent() {
       identifierInputRef.current?.focus();
     }
   };
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) return; // Only allow single digit
 
-  const handleVerifyOTP = async () => {
-    if (!otp.trim()) {
+    const newOtpDigits = [...otpDigits];
+    newOtpDigits[index] = value;
+    setOtpDigits(newOtpDigits);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+      console.log(nextInput);
+    }
+
+    // Check if all 6 digits are entered
+    if (newOtpDigits.every(digit => digit !== '')) {
+      const fullOtp = newOtpDigits.join('');
+      setOtp(fullOtp);
+      console.log(fullOtp);
+      setTimeout(() => {
+        handleVerifyOTP(fullOtp);
+      }, 100); // Auto-verify when all digits entered
+    }
+  };
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData('text').replace(/\D/g, ''); // Remove non-digits
+
+    if (pasteData.length === 6) {
+      const newOtpDigits = pasteData.split('');
+      setOtpDigits(newOtpDigits);
+      setOtp(pasteData);
+      // Auto-verify on paste
+      handleVerifyOTP(pasteData);
+    }
+  };
+
+  const handleVerifyOTP = async (otpValue?: string) => {
+    const otpToVerify = otpValue || otp;
+    if (!otpToVerify.trim()) {
       showToast('Please enter the OTP', 'warning');
       otpInputRef.current?.focus();
       return;
     }
+    console.log('Verifying OTP:', otpToVerify);
 
     const detection = detectInputType(identifier);
 
@@ -118,9 +163,9 @@ function LoginContent() {
 
     let result;
     if (detection.type === 'email') {
-      result = await verifyEmailOTP(detection.formatted, otp);
+      result = await verifyEmailOTP(detection.formatted, otpToVerify);
     } else {
-      result = await verifyMobileOTP(detection.formatted, otp);
+      result = await verifyMobileOTP(detection.formatted, otpToVerify);
     }
 
     setIsLoading(false);
@@ -130,7 +175,9 @@ function LoginContent() {
       otpInputRef.current?.focus();
     }
   };
-
+  const handleVerifyButtonClick = () => {
+    handleVerifyOTP();
+  };
   const handleResendOTP = async () => {
     if (!canResend) return;
 
@@ -168,6 +215,7 @@ function LoginContent() {
   const resetForm = () => {
     setOtpSent(false);
     setOtp('');
+    setOtpDigits(['', '', '', '', '', '']);
     setCanResend(false);
     setResendTimer(0);
   };
@@ -215,19 +263,22 @@ function LoginContent() {
           <label htmlFor="otp" className={styles.formLabel}>
             Enter OTP sent to {getMaskedDisplay()}
           </label>
-          <input
-            type="text"
-            id="otp"
-            className={styles.formInput}
-            placeholder="Enter 6-digit OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            onKeyPress={handleKeyPress}
-            ref={otpInputRef}
-            disabled={isLoading}
-            maxLength={6}
-            required
-          />
+          <div className={styles.otpContainer}>
+            {otpDigits.map((digit, index) => (
+              <input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                className={styles.otpInput}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handleOtpPaste}
+                maxLength={1}
+                disabled={isLoading}
+              />
+            ))}
+          </div>
 
           <div className={styles.resendContainer}>
             <button
@@ -248,25 +299,25 @@ function LoginContent() {
             </button>
           </div>
         </div>
-      ):(
-      <div className={styles.formGroup}>
-        <label htmlFor="identifier" className={styles.formLabel}>
-          Email or Mobile Number
-        </label>
-        <input
-          type="text"
-          id="identifier"
-          className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
-          placeholder='Enter email or mobile number'
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-          onKeyPress={handleKeyPress}
-          ref={identifierInputRef}
-          disabled={otpSent || isLoading}
-          required
-        />
-        {getInputTypeHint()}
-      </div>)}
+      ) : (
+        <div className={styles.formGroup}>
+          <label htmlFor="identifier" className={styles.formLabel}>
+            Email or Mobile Number
+          </label>
+          <input
+            type="text"
+            id="identifier"
+            className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
+            placeholder='Enter email or mobile number'
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            onKeyPress={handleKeyPress}
+            ref={identifierInputRef}
+            disabled={otpSent || isLoading}
+            required
+          />
+          {getInputTypeHint()}
+        </div>)}
 
       <div className={styles.formCheckbox}>
         <input
@@ -294,7 +345,7 @@ function LoginContent() {
         <button
           type="button"
           className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''}`}
-          onClick={handleVerifyOTP}
+          onClick={handleVerifyButtonClick}
           disabled={isLoading}
         >
           {isLoading ? 'Verifying...' : 'Verify OTP'}

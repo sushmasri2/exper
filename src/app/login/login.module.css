@@ -54,8 +54,15 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(180deg); }
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+  }
 }
 
 .container {
@@ -229,6 +236,34 @@
   color: #9ca3af;
 }
 
+.otpContainer {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.otpInput {
+  width: 60px;
+  height: 50px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 400;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.otpInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.otpInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Dark mode input placeholder */
 :global(.dark) .formInput::placeholder {
   color: #6b7280;
@@ -358,13 +393,16 @@
 :global(.dark) .divider span {
   background: rgba(31, 41, 55, 0.9);
 }
+
 /* login.module.css */
 .resendContainer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem; /* equivalent to mt-2 */
+  margin-top: 0.5rem;
+  /* equivalent to mt-2 */
 }
+
 .socialLogin {
   display: flex;
   align-items: center;
@@ -438,7 +476,8 @@
   }
 
   .heroSection {
-    display: none; /* Hide the hero section on mobile */
+    display: none;
+    /* Hide the hero section on mobile */
   }
 
   .loginSection {
@@ -473,8 +512,11 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
-

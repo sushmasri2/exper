@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { showToast } from '@/lib/toast';
-
+import styles from '../app/login/login.module.css';
 declare global {
   interface Window {
     google: any;
@@ -85,10 +85,12 @@ export function GoogleLogin({ onSuccess, onError, disabled }: GoogleLoginProps) 
 
   return (
     <div 
+    className={styles.socialLogin}
       ref={googleButtonRef} 
       style={{ 
         opacity: disabled ? 0.6 : 1, 
-        pointerEvents: disabled ? 'none' : 'auto' 
+        pointerEvents: disabled ? 'none' : 'auto',
+        border: 'none'
       }}
     />
   );
