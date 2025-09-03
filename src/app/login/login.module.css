@@ -146,9 +146,9 @@
   border: 1px solid rgba(75, 85, 99, 0.3);
 }
 
-.loginSection:hover {
+/* .loginSection:hover {
   transform: translateY(-5px);
-}
+} */
 
 .loginHeader {
   text-align: center;
@@ -358,7 +358,13 @@
 :global(.dark) .divider span {
   background: rgba(31, 41, 55, 0.9);
 }
-
+/* login.module.css */
+.resendContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem; /* equivalent to mt-2 */
+}
 .socialLogin {
   display: flex;
   align-items: center;

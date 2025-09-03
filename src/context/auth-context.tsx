@@ -2,31 +2,42 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { requestOTP, verifyOTP, AuthResponse } from '@/lib/api-client';
+import {
+  requestEmailOTP,
+  requestMobileOTP,
+  verifyOTP,
+  checkSession,
+  logoutUser,
+  googleLogin,
+  AuthResponse
+} from '@/lib/api-client';
 
-// Define the shape of the user object
 interface User {
   id: string;
   name?: string;
   email: string;
   avatar?: string;
-  token?: string;
 }
 
-// Define the shape of the auth context
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  sendOTP: (email: string) => Promise<{ success: boolean; message: string }>;
-  verifyAndLogin: (email: string, otp: string) => Promise<{ success: boolean; message?: string }>;
-  logout: () => Promise<void>;
   loading: boolean;
+
+  // OTP-based login methods
+  sendEmailOTP: (email: string) => Promise<{ success: boolean; message: string }>;
+  sendMobileOTP: (mobile: string) => Promise<{ success: boolean; message: string }>;
+  verifyEmailOTP: (email: string, otp: string) => Promise<{ success: boolean; message?: string }>;
+  verifyMobileOTP: (mobile: string, otp: string) => Promise<{ success: boolean; message?: string }>;
+  googleLogin: (id_token: string) => Promise<{ success: boolean; message?: string }>;
+
+  // Session management
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
-// Create the context with a default undefined value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Custom hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -35,140 +46,134 @@ export function useAuth() {
   return context;
 }
 
-// Create a more secure storage utility
-const createSecureStorage = (key: string) => {
-  // In a real app, you might use a library like 'secure-ls' or encrypt data.
-  // For this example, we'll use a simple abstraction over localStorage.
-  return {
-    setItem: (value: string) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(key, value);
-      }
-    },
-    getItem: (): string | null => {
-      if (typeof window !== 'undefined') {
-        return localStorage.getItem(key);
-      }
-      return null;
-    },
-    removeItem: () => {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(key);
-      }
-    },
-  };
-};
-
-const userStorage = createSecureStorage('medai_user');
-
-// Try to get user synchronously from storage if possible
-const getInitialUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-
-  const storedUser = userStorage.getItem();
-  if (!storedUser) return null;
-
-  try {
-    return JSON.parse(storedUser);
-  } catch (error) {
-    console.error("Failed to parse user from storage", error);
-    return null;
-  }
-};
-
-// AuthProvider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Initialize with data from storage if available to prevent unnecessary loading states
-  const [user, setUser] = useState<User | null>(getInitialUser());
-  // Start with loading=false if we already have a user
-  const [loading, setLoading] = useState(!user);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Check session on mount
   useEffect(() => {
-    // If we already have a user from initial state, no need to reload
-    if (user) return;
+    checkCurrentSession();
+  }, []);
 
-    const storedUser = userStorage.getItem();
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse user from storage", error);
-        userStorage.removeItem();
-      }
-    }
-    setLoading(false);
-  }, [user]);
-
-  const sendOTP = async (email: string) => {
-    setLoading(true);
+  const checkCurrentSession = async () => {
     try {
-      const result = await requestOTP(email);
-      setLoading(false);
-      return result;
+      const sessionData = await checkSession();
+      if (sessionData?.user) {
+        setUser(sessionData.user);
+      }
     } catch (error) {
+      console.error('Session check failed:', error);
+      // Clear any stale tokens
+      sessionStorage.removeItem('accessToken');
+    } finally {
       setLoading(false);
-      console.error("Failed to send OTP", error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to send OTP'
-      };
     }
   };
 
-  const verifyAndLogin = async (email: string, otp: string) => {
+  const sendEmailOTP = async (email: string) => {
     setLoading(true);
     try {
-      const result = await verifyOTP(email, otp);
+      const result = await requestEmailOTP(email);
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if ('success' in result && result.success === false) {
-        setLoading(false);
+  const sendMobileOTP = async (mobile: string) => {
+    setLoading(true);
+    try {
+      const result = await requestMobileOTP(mobile);
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyEmailOTP = async (email: string, otp: string) => {
+    setLoading(true);
+    try {
+      const result = await verifyOTP(email, otp, 'email');
+
+      if ('accessToken' in result) {
+        setUser(result.user);
+        router.push('/dashboard');
+        return { success: true };
+      } else {
         return { success: false, message: result.message };
       }
-
-      // We know this is AuthResponse now
-      const authResponse = result as AuthResponse;
-
-      const userData: User = {
-        id: authResponse.user.id,
-        email: authResponse.user.email,
-        name: authResponse.user.name,
-        avatar: authResponse.user.avatar,
-        token: authResponse.token
-      };
-
-      setUser(userData);
-      userStorage.setItem(JSON.stringify(userData));
+    } finally {
       setLoading(false);
-      router.push('/dashboard');
-      return { success: true };
-    } catch (error) {
+    }
+  };
+
+  const verifyMobileOTP = async (mobile: string, otp: string) => {
+    setLoading(true);
+    try {
+      const result = await verifyOTP(mobile, otp, 'mobile');
+
+      if ('accessToken' in result) {
+        setUser(result.user);
+        router.push('/dashboard');
+        return { success: true };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } finally {
       setLoading(false);
-      console.error("Failed to verify OTP", error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to verify OTP'
-      };
+    }
+  };
+  const handleGoogleLogin = async (id_token: string) => {
+    setLoading(true);
+    try {
+      const result = await googleLogin(id_token);
+
+      if ('accessToken' in result) {
+        setUser(result.user);
+        router.push('/dashboard');
+        return { success: true };
+      } else {
+        return { success: false, message: result.message };
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+    try {
+      await logoutUser();
+      setUser(null);
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear user state even if API call fails
+      setUser(null);
+      sessionStorage.removeItem('accessToken');
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setUser(null);
-    userStorage.removeItem();
-    setLoading(false);
-    router.push('/login');
+  const refreshSession = async () => {
+    await checkCurrentSession();
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
-    sendOTP,
-    verifyAndLogin,
-    logout,
     loading,
+    sendEmailOTP,
+    sendMobileOTP,
+    verifyEmailOTP,
+    verifyMobileOTP,
+    logout,
+    refreshSession,
+    googleLogin: handleGoogleLogin,
+
   };
 
   return (

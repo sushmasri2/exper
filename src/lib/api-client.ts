@@ -1,55 +1,314 @@
-// API Client for making requests to the Medvarsity API
+// API Client for making requests to the Medvarsity API with SSO support
 import { showToast } from './toast';
 
 /**
  * Base API URL for Medvarsity API
  */
-const API_BASE_URL = 'https://api-staging.medvarsity.com';
+const API_BASE_URL = 'https://csapi-staging.medvarsity.com';
 
 /**
- * Custom fetch function that always includes the X-Requested-With header
- * @param url URL to fetch
- * @param options Fetch options
- * @returns Fetch response
+ * Custom fetch function that always includes required headers and credentials
  */
 export async function fetchWithHeaders(url: string, options: RequestInit = {}): Promise<Response> {
-  // Ensure headers exist
   const headers = new Headers(options.headers || {});
+  
+  // Add required headers
+  headers.set('X-Requested-With', 'cms');
+  headers.set('Content-Type', 'application/json');
+  headers.set('Accept', 'application/json');
+  
+  // Add access token if available
+  const accessToken = sessionStorage.getItem('accessToken');
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
 
-  // Add the X-Requested-With header
-  headers.set('X-Requested-With', 'ops');
-
-  // Return the fetch with updated headers
   return fetch(url, {
     ...options,
     headers,
+    credentials: 'include', // Important for cookie-based SSO
   });
 }
 
 /**
- * Handles API error responses and returns appropriate error message
- * @param response The fetch Response object
- * @param data The parsed JSON data (if available)
- * @param defaultMessage Default error message to show if no specific message is found
- * @returns Formatted error message
+ * Handle token refresh when access token expires
  */
+async function refreshToken(): Promise<string | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'cms',
+      },
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.accessToken) {
+        sessionStorage.setItem('accessToken', data.accessToken);
+        return data.accessToken;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Make authenticated API request with automatic token refresh
+ */
+export async function makeAuthenticatedRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  let response = await fetchWithHeaders(`${API_BASE_URL}${endpoint}`, options);
+
+  // If unauthorized, try to refresh token and retry once
+  if (response.status === 401) {
+    const newToken = await refreshToken();
+    
+    if (newToken) {
+      // Update headers with new token
+      const headers = new Headers(options.headers || {});
+      headers.set('Authorization', `Bearer ${newToken}`);
+      
+      // Retry the request
+      response = await fetchWithHeaders(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } else {
+      // Refresh failed, redirect to login
+      sessionStorage.removeItem('accessToken');
+      window.location.href = '/login';
+      throw new Error('Session expired. Please login again.');
+    }
+  }
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const errorMessage = await handleApiError(response, data, 'Request failed');
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+
+/**
+ * Auth response type definition
+ */
+export interface AuthResponse {
+  accessToken: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    avatar?: string;
+  };
+}
+
+/**
+ * Send OTP to email
+ */
+export async function requestEmailOTP(email: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = await handleApiError(response, data, 'Failed to send OTP');
+      return { success: false, message: errorMessage };
+    }
+
+    return {
+      success: true,
+      message: data.message || 'OTP sent to your email',
+    };
+  } catch (error) {
+    console.error('Error requesting email OTP:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to send OTP',
+    };
+  }
+}
+
+/**
+ * Send OTP to mobile
+ */
+export async function requestMobileOTP(mobile: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      body: JSON.stringify({ mobile }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = await handleApiError(response, data, 'Failed to send OTP');
+      return { success: false, message: errorMessage };
+    }
+
+    return {
+      success: true,
+      message: data.message || 'OTP sent to your mobile',
+    };
+  } catch (error) {
+    console.error('Error requesting mobile OTP:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to send OTP',
+    };
+  }
+}
+
+/**
+ * Verify OTP and login
+ */
+export async function verifyOTP(
+  identifier: string, 
+  otp: string, 
+  type: 'email' | 'mobile'
+): Promise<AuthResponse | { success: false; message: string }> {
+  try {
+    const body = type === 'email' 
+      ? { email: identifier, otp, purpose: 'login' }
+      : { mobile: identifier, otp, purpose: 'login' };
+
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/otp/verify`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = await handleApiError(response, data, 'Failed to verify OTP');
+      return { success: false, message: errorMessage };
+    }
+
+    // Store access token
+    if (data.accessToken) {
+      sessionStorage.setItem('accessToken', data.accessToken);
+    }
+
+    showToast('Login successful', 'success');
+    return {
+      accessToken: data.accessToken,
+      user: data.user,
+    };
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+    return { success: false, message: errorMessage };
+  }
+}
+
+/**
+ * Google OAuth login
+ */
+export async function googleLogin(id_token: string): Promise<AuthResponse | { success: false; message: string }> {
+  try {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/google/callback`, {
+      method: 'POST',
+      body: JSON.stringify({ id_token }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = await handleApiError(response, data, 'Google login failed');
+      return { success: false, message: errorMessage };
+    }
+
+    // Store access token
+    if (data.accessToken) {
+      sessionStorage.setItem('accessToken', data.accessToken);
+    }
+
+    showToast('Login successful', 'success');
+    return {
+      accessToken: data.accessToken,
+      user: data.user,
+    };
+  } catch (error) {
+    console.error('Google login error:', error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Google login failed' 
+    };
+  }
+}
+
+/**
+ * Check current session status
+ */
+export async function checkSession(): Promise<{ user: any } | null> {
+  try {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/session`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Update access token if provided
+      if (data.accessToken) {
+        sessionStorage.setItem('accessToken', data.accessToken);
+      }
+      
+      return data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Session check failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Logout user
+ */
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetchWithHeaders(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+    });
+    
+    sessionStorage.removeItem('accessToken');
+    showToast('Logged out successfully', 'success');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    // Still clear local tokens even if API call fails
+    sessionStorage.removeItem('accessToken');
+  }
+}
+
+// Keep existing error handler
 async function handleApiError(
   response: Response,
   data: Record<string, unknown> | null,
   defaultMessage: string
 ): Promise<string> {
-  // If data wasn't provided, try to parse it
   if (!data) {
     try {
       data = await response.json();
     } catch {
-      // If we can't parse JSON, use status text
       return `${defaultMessage}: ${response.statusText || response.status}`;
     }
   }
 
-  // Ensure data is not null or undefined before accessing properties
-  data = data || {};  // Helper function to ensure we return a string
+  data = data || {};
+
   const safeString = (value: unknown): string => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'string') return value;
@@ -63,29 +322,23 @@ async function handleApiError(
     return String(value);
   };
 
-  // Handle specific status codes
   switch (response.status) {
     case 400:
-      // Bad request - could have validation errors
       return safeString(data.detail) || safeString(data.message) || 'Invalid request';
     case 401:
-      return safeString(data.detail) || safeString(data.message) || 'Authentication required. Please login again.';
+      return safeString(data.detail) || safeString(data.message) || 'Authentication required';
     case 403:
-      return safeString(data.detail) || safeString(data.message) || 'You do not have permission to access this resource.';
+      return safeString(data.detail) || safeString(data.message) || 'Access denied';
     case 404:
       return safeString(data.detail) || safeString(data.message) || 'Resource not found';
     case 422:
-      // Validation errors - common in APIs
-      // Handle FastAPI validation errors which have a specific structure
       if (Array.isArray(data.detail) && data.detail.length > 0) {
-        // Define a type for FastAPI validation error structure
         interface ValidationError {
           loc: string[];
           msg: string;
           type: string;
         }
 
-        // Extract all validation errors
         const validationErrors = data.detail
           .filter((error: unknown): error is ValidationError =>
             typeof error === 'object' &&
@@ -96,7 +349,6 @@ async function handleApiError(
           .map((error: ValidationError) => safeString(error.msg));
 
         if (validationErrors.length > 0) {
-          // Return all errors, separated by line breaks for better readability
           return validationErrors.join('\n');
         }
       }
@@ -111,147 +363,4 @@ async function handleApiError(
     default:
       return safeString(data.detail) || safeString(data.message) || `Error (${response.status}): ${defaultMessage}`;
   }
-}
-
-/**
- * Auth response type definition
- */
-export interface AuthResponse {
-    token: string;
-    user: {
-        id: string;
-        email: string;
-        name?: string;
-        avatar?: string;
-    };
-}
-
-/**
- * Error response type definition
- */
-export interface ErrorResponse {
-    message: string;
-    errors?: Record<string, string[]>;
-}
-
-/**
- * Send login request to get OTP
- * @param email User's email address
- * @returns Response indicating OTP has been sent
- */
-export async function requestOTP(email: string): Promise<{ success: boolean; message: string }> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'ops',
-            },
-            body: JSON.stringify({ email }),
-        });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = await handleApiError(response, data, 'Failed to send OTP');
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
-    const successMessage = data.message || 'OTP sent successfully';
-        return {
-            success: true,
-            message: successMessage,
-        };
-    } catch (error) {
-        console.error('Error requesting OTP:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
-        return {
-            success: false,
-            message: errorMessage,
-        };
-    }
-}
-
-/**
- * Verify OTP and get authentication token
- * @param email User's email address
- * @param otp OTP code received by user
- * @returns Authentication data including token and user info
- */
-export async function verifyOTP(email: string, otp: string): Promise<AuthResponse | { success: false, message: string }> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/verify-otp`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'ops',
-            },
-            body: JSON.stringify({ email, otp }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            const errorMessage = await handleApiError(response, data, 'Failed to verify OTP');
-            showToast(errorMessage, 'error');
-            return {
-                success: false,
-                message: errorMessage,
-            };
-        }
-
-        showToast('Login successful', 'success');
-        return {
-            token: data.token,
-            user: {
-                id: data.user.id,
-                email: data.user.email,
-                name: data.user.name,
-                avatar: data.user.avatar,
-            }
-        };
-    } catch (error) {
-        console.error('Error verifying OTP:', error);
-        const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
-        showToast(errorMessage, 'error');
-        return {
-            success: false,
-            message: errorMessage,
-        };
-    }
-}
-
-/**
- * Get currently authenticated user profile
- * @param token Authentication token
- * @returns User profile data
- */
-export async function getUserProfile(token: string) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/user`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json',
-                'X-Requested-With': 'ops',
-            },
-        });
-
-        if (!response.ok) {
-            const errorMessage = await handleApiError(response, null, 'Failed to fetch user profile');
-            showToast(errorMessage, 'error');
-            throw new Error(errorMessage);
-        }
-
-        return await response.json();
-    } catch (error: unknown) {
-        console.error('Error fetching user profile:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch user profile';
-        showToast(errorMessage, 'error');
-        throw error;
-    }
 }

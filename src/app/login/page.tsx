@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { showToast } from '@/lib/toast';
+import { detectInputType, maskEmail, maskMobile } from '@/lib/input-validator';
 import styles from './login.module.css';
 import PublicRoute from '@/components/public-route';
 import { LoginLayout } from './login-layout';
+import { GoogleLogin } from '@/components/google-login';
 
 export default function LoginPage() {
   return (
@@ -18,76 +20,183 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-  const { sendOTP, verifyAndLogin } = useAuth();
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
+  const { sendEmailOTP, sendMobileOTP, verifyEmailOTP, verifyMobileOTP } = useAuth();
+
+  // Form states
+  const [identifier, setIdentifier] = useState(''); // Single input for email or mobile
   const [otp, setOtp] = useState('');
+  const [detectedType, setDetectedType] = useState<'email' | 'mobile' | 'invalid'>('invalid');
+  const [formattedValue, setFormattedValue] = useState('');
+
+  // UI states
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  // Reference to email input for focusing
-  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Resend OTP states
+  const [canResend, setCanResend] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  const identifierInputRef = useRef<HTMLInputElement>(null);
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
+  // Detect input type as user types
+  useEffect(() => {
+    const detection = detectInputType(identifier);
+    setDetectedType(detection.type);
+    setFormattedValue(detection.formatted);
+  }, [identifier]);
+
+  // Resend timer effect
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (otpSent) {
+      setCanResend(true);
+    }
+  }, [resendTimer, otpSent]);
+
+  const startResendTimer = () => {
+    setCanResend(false);
+    setResendTimer(30);
+  };
 
   const handleSendOTP = async () => {
-    if (!email.trim()) {
-      showToast('Please enter your email', 'warning');
-      // Focus the email field
-      if (emailInputRef.current) {
-        emailInputRef.current.focus();
-      }
+
+    if (!identifier.trim()) {
+      showToast('Please enter your email or mobile number', 'warning');
+      identifierInputRef.current?.focus();
       return;
     }
-    setIsLoading(true);
-    const result = await sendOTP(email);
-    setIsLoading(false);
-    if (result.success) {
-      setIsSent(true);
-      setOtpSent(true);
-      setTimeout(() => setIsSent(false), 2000);
-    } else {
-      // Show toast for all errors
-      const errorMsg = result.message || 'An error occurred during login';
-      showToast(errorMsg, 'error');
 
-      // Focus the email field on error (Task 2)
-      if (emailInputRef.current) {
-        emailInputRef.current.focus();
-      }
+    const detection = detectInputType(identifier);
+
+    if (detection.type === 'invalid') {
+      showToast('Please enter a valid email or mobile number', 'warning');
+      identifierInputRef.current?.focus();
+      return;
+    }
+
+    setIsLoading(true);
+
+    let result;
+    if (detection.type === 'email') {
+      result = await sendEmailOTP(detection.formatted);
+    } else {
+      result = await sendMobileOTP(detection.formatted);
+    }
+
+    setIsLoading(false);
+
+    if (result.success) {
+      setOtpSent(true);
+      startResendTimer();
+      showToast(result.message, 'success');
+      setTimeout(() => otpInputRef.current?.focus(), 100);
+    } else {
+      showToast(result.message, 'error');
+      identifierInputRef.current?.focus();
     }
   };
 
   const handleVerifyOTP = async () => {
     if (!otp.trim()) {
       showToast('Please enter the OTP', 'warning');
+      otpInputRef.current?.focus();
       return;
     }
+
+    const detection = detectInputType(identifier);
+
+    if (detection.type === 'invalid') {
+      showToast('Invalid email or mobile number', 'error');
+      return;
+    }
+
     setIsLoading(true);
-    const result = await verifyAndLogin(email, otp);
+
+    let result;
+    if (detection.type === 'email') {
+      result = await verifyEmailOTP(detection.formatted, otp);
+    } else {
+      result = await verifyMobileOTP(detection.formatted, otp);
+    }
+
     setIsLoading(false);
 
     if (!result.success) {
-      // Show toast for all errors
-      const errorMsg = result.message || 'An error occurred during OTP verification';
-      showToast(errorMsg, 'error');
+      showToast(result.message || 'OTP verification failed', 'error');
+      otpInputRef.current?.focus();
     }
   };
 
-  const handleGoogleLogin = async () => {
-    // Google login is not implemented in this version
-    showToast('Google login is not available. Please use OTP login.', 'info');
+  const handleResendOTP = async () => {
+    if (!canResend) return;
+
+    const detection = detectInputType(identifier);
+
+    setIsLoading(true);
+
+    let result;
+    if (detection.type === 'email') {
+      result = await sendEmailOTP(detection.formatted);
+    } else {
+      result = await sendMobileOTP(detection.formatted);
+    }
+
+    setIsLoading(false);
+
+    if (result.success) {
+      startResendTimer();
+      showToast('OTP resent successfully', 'success');
+    } else {
+      showToast(result.message, 'error');
+    }
   };
 
-  // Handle Enter key press to submit the form
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       if (!otpSent) {
-        // If we're on the email field, submit OTP request
         handleSendOTP();
       } else {
-        // If we're on the OTP field, verify OTP
         handleVerifyOTP();
       }
     }
+  };
+
+  const resetForm = () => {
+    setOtpSent(false);
+    setOtp('');
+    setCanResend(false);
+    setResendTimer(0);
+  };
+
+
+  // Get input type hint
+  const getInputTypeHint = () => {
+    if (!identifier) return null;
+
+    if (detectedType === 'email') {
+      return <span className={styles.inputHint}>Email detected</span>;
+    } else if (detectedType === 'mobile') {
+      return <span className={styles.inputHint}>Mobile detected</span>;
+    } else {
+      return <span className={styles.inputHintError}>⚠️ Invalid format</span>;
+    }
+  };
+
+  // Get masked display value for OTP sent message
+  const getMaskedDisplay = () => {
+    const detection = detectInputType(identifier);
+
+    if (detection.type === 'email') {
+      return maskEmail(detection.formatted);
+    } else if (detection.type === 'mobile') {
+      return maskMobile(detection.formatted);
+    }
+
+    return detection.original;
   };
 
   return (
@@ -97,24 +206,15 @@ function LoginContent() {
         <p>Sign in to access your MedAI Content dashboard</p>
       </div>
 
-      <div className={styles.formGroup}>
-        <label htmlFor="email" className={styles.formLabel}>Email</label>
-        <input
-          type="email"
-          id="email"
-          className={styles.formInput}
-          placeholder="Enter your email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyPress={handleKeyPress}
-          ref={emailInputRef}
-          required
-        />
-      </div>
+      {/* Smart Input Field */}
 
-      {otpSent && (
+
+      {/* OTP Input (shown after OTP is sent) */}
+      {otpSent ? (
         <div className={styles.formGroup}>
-          <label htmlFor="otp" className={styles.formLabel}>Enter OTP</label>
+          <label htmlFor="otp" className={styles.formLabel}>
+            Enter OTP sent to {getMaskedDisplay()}
+          </label>
           <input
             type="text"
             id="otp"
@@ -123,10 +223,50 @@ function LoginContent() {
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             onKeyPress={handleKeyPress}
+            ref={otpInputRef}
+            disabled={isLoading}
+            maxLength={6}
             required
           />
+
+          <div className={styles.resendContainer}>
+            <button
+              type="button"
+              className={styles.resendButton}
+              onClick={handleResendOTP}
+              disabled={!canResend || isLoading}
+            >
+              {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend OTP'}
+            </button>
+            <button
+              type="button"
+              className={styles.changeButton}
+              onClick={resetForm}
+              disabled={isLoading}
+            >
+              Change {detectedType === 'email' ? 'Email' : 'Mobile'}
+            </button>
+          </div>
         </div>
-      )}
+      ):(
+      <div className={styles.formGroup}>
+        <label htmlFor="identifier" className={styles.formLabel}>
+          Email or Mobile Number
+        </label>
+        <input
+          type="text"
+          id="identifier"
+          className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
+          placeholder='Enter email or mobile number'
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          onKeyPress={handleKeyPress}
+          ref={identifierInputRef}
+          disabled={otpSent || isLoading}
+          required
+        />
+        {getInputTypeHint()}
+      </div>)}
 
       <div className={styles.formCheckbox}>
         <input
@@ -136,17 +276,19 @@ function LoginContent() {
           checked={rememberMe}
           onChange={(e) => setRememberMe(e.target.checked)}
         />
-        <label htmlFor="remember" className={styles.checkboxLabel}>Remember me for 30 days</label>
+        <label htmlFor="remember" className={styles.checkboxLabel}>
+          Remember me for 30 days
+        </label>
       </div>
 
+      {/* Action Button */}
       {!otpSent ? (
         <button
           type="button"
-          className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''} ${isSent ? styles.btnSuccess : ''}`}
+          className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''}`}
           onClick={handleSendOTP}
-          disabled={isLoading || isSent}
         >
-          {isLoading ? 'Sending OTP...' : isSent ? 'OTP Sent!' : 'Get OTP'}
+          {isLoading ? 'Sending OTP...' : `Send OTP`}
         </button>
       ) : (
         <button
@@ -163,13 +305,26 @@ function LoginContent() {
         <span>OR</span>
       </div>
 
-      <a href="#" className={styles.socialLogin} onClick={(e) => { e.preventDefault(); handleGoogleLogin(); }}>
+      {/* <a href="#" className={styles.socialLogin} onClick={(e) => {
+        e.preventDefault();
+        showToast('Google login is not available. Please use OTP login.', 'info');
+      }}>
         <div className={styles.googleIcon}></div>
         Continue with Google
-      </a>
+      </a> */}
+
+      <GoogleLogin
+        disabled={isLoading}
+        onSuccess={() => {
+          // Optional: additional success handling
+        }}
+        onError={(error) => {
+          // Optional: additional error handling
+        }}
+      />
 
       <div className={styles.poweredBy}>
-        Powered by <a href="https://medvarsity.com" target="_blank">Medvarsity </a>
+        Powered by <a href="https://medvarsity.com" target="_blank">Medvarsity</a>
       </div>
     </>
   );
