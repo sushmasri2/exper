@@ -19,7 +19,7 @@ export async function fetchWithHeaders(url: string, options: RequestInit = {}): 
   headers.set('Accept', 'application/json');
   headers.set('platform', PLATFORM);
   // Add access token if available
-  const accessToken = localStorage.getItem('accessToken');
+  const accessToken = sessionStorage.getItem('accessToken');
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
