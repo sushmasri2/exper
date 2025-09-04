@@ -100,7 +100,9 @@ function LoginContent() {
       identifierInputRef.current?.focus();
     }
   };
+
   const handleOtpChange = (index: number, value: string) => {
+
     if (value.length > 1) return; // Only allow single digit
 
     const newOtpDigits = [...otpDigits];
@@ -134,12 +136,13 @@ function LoginContent() {
     e.preventDefault();
     const pasteData = e.clipboardData.getData('text').replace(/\D/g, ''); // Remove non-digits
 
-    if (pasteData.length === 6) {
-      const newOtpDigits = pasteData.split('');
+    if (pasteData.length >= 6 && /^\d+$/.test(pasteData)) {
+      const first6Digits = pasteData.substring(0, 6); // Take only first 6 digits
+      const newOtpDigits = first6Digits.split('');
       setOtpDigits(newOtpDigits);
-      setOtp(pasteData);
+      setOtp(first6Digits);
       // Auto-verify on paste
-      handleVerifyOTP(pasteData);
+      handleVerifyOTP(first6Digits);
     }
   };
 
@@ -173,6 +176,14 @@ function LoginContent() {
     if (!result.success) {
       showToast(result.message || 'OTP verification failed', 'error');
       otpInputRef.current?.focus();
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtp('');
+
+      // Focus on first OTP input
+      setTimeout(() => {
+        const firstOtpInput = document.getElementById('otp-0');
+        firstOtpInput?.focus();
+      }, 100);
     }
   };
   const handleVerifyButtonClick = () => {
@@ -220,17 +231,15 @@ function LoginContent() {
     setResendTimer(0);
   };
 
-
-  // Get input type hint
   const getInputTypeHint = () => {
     if (!identifier) return null;
 
     if (detectedType === 'email') {
-      return <span className={styles.inputHint}>Email detected</span>;
+      return <span className={styles.inputHint}>🔒 An OTP has been sent to the provided Email Address</span>;
     } else if (detectedType === 'mobile') {
-      return <span className={styles.inputHint}>Mobile detected</span>;
+      return <span className={styles.inputHint}>🔒 An OTP has been sent to the provided phone number.</span>;
     } else {
-      return <span className={styles.inputHintError}>⚠️ Invalid format</span>;
+      return <span className={styles.inputHintError}>⚠️ Invalid email or mobile format</span>;
     }
   };
 
@@ -268,10 +277,13 @@ function LoginContent() {
               <input
                 key={index}
                 id={`otp-${index}`}
-                type="text"
+                type="tel"
                 className={styles.otpInput}
                 value={digit}
-                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                  handleOtpChange(index, value);
+                }}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={handleOtpPaste}
                 maxLength={1}
@@ -283,7 +295,8 @@ function LoginContent() {
           <div className={styles.resendContainer}>
             <button
               type="button"
-              className={styles.resendButton}
+              className={`${styles.resendButton} ${resendTimer > 0 ? styles.resendDisabled : styles.resendActive
+                }`}
               onClick={handleResendOTP}
               disabled={!canResend || isLoading}
             >
@@ -295,7 +308,7 @@ function LoginContent() {
               onClick={resetForm}
               disabled={isLoading}
             >
-              Change {detectedType === 'email' ? 'Email' : 'Mobile'}
+              Use Another {detectedType === 'email' ? 'Email' : 'Phone Number'}
             </button>
           </div>
         </div>
@@ -316,7 +329,7 @@ function LoginContent() {
             disabled={otpSent || isLoading}
             required
           />
-          {getInputTypeHint()}
+          <p className='mt-5'>{getInputTypeHint()}</p>
         </div>)}
 
       <div className={styles.formCheckbox}>
@@ -328,7 +341,7 @@ function LoginContent() {
           onChange={(e) => setRememberMe(e.target.checked)}
         />
         <label htmlFor="remember" className={styles.checkboxLabel}>
-          Remember me for 30 days
+          Remember me
         </label>
       </div>
 
@@ -355,14 +368,6 @@ function LoginContent() {
       <div className={styles.divider}>
         <span>OR</span>
       </div>
-
-      {/* <a href="#" className={styles.socialLogin} onClick={(e) => {
-        e.preventDefault();
-        showToast('Google login is not available. Please use OTP login.', 'info');
-      }}>
-        <div className={styles.googleIcon}></div>
-        Continue with Google
-      </a> */}
 
       <GoogleLogin
         disabled={isLoading}

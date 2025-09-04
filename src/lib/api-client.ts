@@ -219,7 +219,7 @@ export async function verifyOTP(
  */
 export async function googleLogin(id_token: string): Promise<AuthResponse | { success: false; message: string }> {
   try {
-    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/google/`, {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/api/auth/google/callback`, {
       method: 'POST',
       body: JSON.stringify({ id_token }),
     });
