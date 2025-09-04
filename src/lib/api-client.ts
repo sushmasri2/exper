@@ -4,7 +4,8 @@ import { showToast } from './toast';
 /**
  * Base API URL for Medvarsity API
  */
-const API_BASE_URL = 'https://csapi-staging.medvarsity.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://csapi-staging.medvarsity.com';
+const PLATFORM = process.env.NEXT_PUBLIC_PLATFORM || 'cms';
 
 /**
  * Custom fetch function that always includes required headers and credentials
@@ -16,9 +17,9 @@ export async function fetchWithHeaders(url: string, options: RequestInit = {}): 
   headers.set('X-Requested-With', 'cms');
   headers.set('Content-Type', 'application/json');
   headers.set('Accept', 'application/json');
-
+  headers.set('platform', PLATFORM);
   // Add access token if available
-  const accessToken = sessionStorage.getItem('accessToken');
+  const accessToken = localStorage.getItem('accessToken');
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
