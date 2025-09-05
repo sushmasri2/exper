@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useApi } from '@/hooks/use-api';
 import { showToast } from '@/lib/toast';
 import { detectInputType, maskEmail, maskMobile } from '@/lib/input-validator';
 import styles from './login.module.css';
@@ -38,6 +39,26 @@ function LoginContent() {
   const [canResend, setCanResend] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
+  // Check for OAuth callback errors
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+
+    if (error) {
+      let errorMsg = 'Authentication failed. Please try again.';
+
+      if (error === 'google_auth_failed') {
+        errorMsg = 'Google sign-in failed. Please try again or use OTP login.';
+      }
+
+      showToast(errorMsg, 'error');
+
+      // Clean up URL
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, []);
+
   const identifierInputRef = useRef<HTMLInputElement>(null);
   const otpInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,11 +79,6 @@ function LoginContent() {
     }
   }, [resendTimer, otpSent]);
 
-  const startResendTimer = () => {
-    setCanResend(false);
-    setResendTimer(30);
-  };
-
   const handleSendOTP = async () => {
 
     if (!identifier.trim()) {
@@ -81,28 +97,36 @@ function LoginContent() {
 
     setIsLoading(true);
 
-    let result;
-    if (detection.type === 'email') {
-      result = await sendEmailOTP(detection.formatted);
-    } else {
-      result = await sendMobileOTP(detection.formatted);
-    }
+    try {
+      let result;
+      if (detection.type === 'email') {
+        result = await sendEmailOTP(detection.formatted);
+      } else {
+        result = await sendMobileOTP(detection.formatted);
+      }
 
-    setIsLoading(false);
+      if (result.success) {
+        setOtpSent(true);
+        startResendTimer(); // Start the resend timer
+        showToast('OTP sent successfully', 'success');
 
-    if (result.success) {
-      setOtpSent(true);
-      startResendTimer();
-      showToast(result.message, 'success');
-      setTimeout(() => otpInputRef.current?.focus(), 100);
-    } else {
-      showToast(result.message, 'error');
-      identifierInputRef.current?.focus();
+        // Focus on first OTP input
+        setTimeout(() => {
+          const firstOtpInput = document.getElementById('otp-0');
+          firstOtpInput?.focus();
+        }, 100);
+      } else {
+        showToast(result.message || 'Failed to send OTP', 'error');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleOtpChange = (index: number, value: string) => {
-
     if (value.length > 1) return; // Only allow single digit
 
     const newOtpDigits = [...otpDigits];
@@ -164,18 +188,33 @@ function LoginContent() {
 
     setIsLoading(true);
 
-    let result;
-    if (detection.type === 'email') {
-      result = await verifyEmailOTP(detection.formatted, otpToVerify);
-    } else {
-      result = await verifyMobileOTP(detection.formatted, otpToVerify);
-    }
+    try {
+      let result;
 
-    setIsLoading(false);
+      if (detection.type === 'email') {
+        result = await verifyEmailOTP(detection.formatted, otpToVerify);
+      } else {
+        result = await verifyMobileOTP(detection.formatted, otpToVerify);
+      }
 
-    if (!result.success) {
-      showToast(result.message || 'OTP verification failed', 'error');
-      otpInputRef.current?.focus();
+      if (!('success' in result) || result.success !== false) {
+        // Redirect will happen automatically via auth context
+      } else {
+        otpInputRef.current?.focus();
+        setOtpDigits(['', '', '', '', '', '']);
+        setOtp('');
+
+        // Focus on first OTP input
+        setTimeout(() => {
+          const firstOtpInput = document.getElementById('otp-0');
+          firstOtpInput?.focus();
+        }, 100);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      showToast(errorMessage, 'error');
+
+      // Reset OTP inputs
       setOtpDigits(['', '', '', '', '', '']);
       setOtp('');
 
@@ -184,32 +223,48 @@ function LoginContent() {
         const firstOtpInput = document.getElementById('otp-0');
         firstOtpInput?.focus();
       }, 100);
+    } finally {
+      setIsLoading(false);
     }
   };
   const handleVerifyButtonClick = () => {
     handleVerifyOTP();
   };
+  // Helper function to start the resend timer
+  const startResendTimer = () => {
+    setCanResend(false);
+    setResendTimer(30); // 30 seconds cooldown
+  };
+
   const handleResendOTP = async () => {
     if (!canResend) return;
 
     const detection = detectInputType(identifier);
 
     setIsLoading(true);
+    setCanResend(false);
 
-    let result;
-    if (detection.type === 'email') {
-      result = await sendEmailOTP(detection.formatted);
-    } else {
-      result = await sendMobileOTP(detection.formatted);
-    }
+    try {
+      let result;
+      if (detection.type === 'email') {
+        result = await sendEmailOTP(detection.formatted);
+      } else {
+        result = await sendMobileOTP(detection.formatted);
+      }
 
-    setIsLoading(false);
-
-    if (result.success) {
-      startResendTimer();
-      showToast('OTP resent successfully', 'success');
-    } else {
-      showToast(result.message, 'error');
+      if (result.success) {
+        startResendTimer();
+        showToast('OTP resent successfully', 'success');
+      } else {
+        showToast(result.message || 'Failed to resend OTP', 'error');
+        setCanResend(true);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend OTP';
+      showToast(errorMessage, 'error');
+      setCanResend(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -231,13 +286,15 @@ function LoginContent() {
     setResendTimer(0);
   };
 
+
+  // Get input type hint
   const getInputTypeHint = () => {
     if (!identifier) return null;
 
     if (detectedType === 'email') {
-      return <span className={styles.inputHint}>🔒 An OTP has been sent to the provided Email Address</span>;
+      return <span className={styles.inputHint}>🔒 An OTP will be sent to your provided Email Address</span>;
     } else if (detectedType === 'mobile') {
-      return <span className={styles.inputHint}>🔒 An OTP has been sent to the provided phone number.</span>;
+      return <span className={styles.inputHint}>🔒 An OTP will be sent to your provided Phone number.</span>;
     } else {
       return <span className={styles.inputHintError}>⚠️ Invalid email or mobile format</span>;
     }
@@ -369,13 +426,22 @@ function LoginContent() {
         <span>OR</span>
       </div>
 
+      {/* <a href="#" className={styles.socialLogin} onClick={(e) => {
+        e.preventDefault();
+        showToast('Google login is not available. Please use OTP login.', 'info');
+      }}>
+        <div className={styles.googleIcon}></div>
+        Continue with Google
+      </a> */}
+
       <GoogleLogin
         disabled={isLoading}
         onSuccess={() => {
           // Optional: additional success handling
         }}
-        onError={(error) => {
-          // Optional: additional error handling
+        onError={(errorMsg) => {
+          // Optional: additional error handling using errorMsg
+          console.error('Google login error:', errorMsg);
         }}
       />
 

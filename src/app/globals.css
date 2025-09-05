@@ -1,9 +1,7 @@
+/* Import Tailwind CSS v4 properly */
 @import "tailwindcss";
-@import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
+:root {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -41,9 +39,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-}
-
-:root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -56,8 +51,10 @@
   --destructive-200: oklch(0.85 0.15 30);
   --warning-50: oklch(0.97 0.04 85);
   --warning-200: oklch(0.85 0.15 85);
+  --warning: oklch(0.7 0.15 85);
   --info-50: oklch(0.97 0.04 260);
   --info-200: oklch(0.85 0.15 260);
+  --info: oklch(0.6 0.2 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -105,6 +102,17 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+
+  /* Toast colors - Dark Mode */
+  --success-50: oklch(0.25 0.04 145);
+  --success-200: oklch(0.35 0.15 145);
+  --success: oklch(0.63 0.22 145);
+  --destructive-50: oklch(0.25 0.04 30);
+  --destructive-200: oklch(0.35 0.15 30);
+  --warning-50: oklch(0.25 0.04 85);
+  --warning-200: oklch(0.35 0.15 85);
+  --info-50: oklch(0.25 0.04 260);
+  --info-200: oklch(0.35 0.15 260);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
@@ -125,10 +133,12 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+    outline-color: oklch(from var(--ring) l c h / 0.5);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background);
+    color: var(--foreground);
   }
   /* Add this to ensure all clickable elements have a pointer cursor */
   button,
@@ -137,4 +147,21 @@
   [data-clickable="true"] {
     cursor: pointer;
   }
+}
+
+/* Utility classes for SVG icon colors */
+.stroke-success {
+  stroke: var(--success);
+}
+
+.stroke-destructive {
+  stroke: var(--destructive);
+}
+
+.stroke-warning-200 {
+  stroke: var(--warning-200);
+}
+
+.stroke-info-200 {
+  stroke: var(--info-200);
 }

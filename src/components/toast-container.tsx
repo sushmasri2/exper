@@ -63,7 +63,9 @@ export function addToast(message: unknown, type: ToastType = "info", duration = 
   });
 
   window.dispatchEvent(event);
-}export function ToastContainer() {
+}
+
+export function ToastContainer() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   useEffect(() => {

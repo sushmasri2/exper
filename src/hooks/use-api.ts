@@ -1,16 +1,21 @@
 "use client";
 
 import { useAuth } from '@/context/auth-context';
+import { useState } from 'react';
 
 /**
  * A hook that provides methods for making authenticated API requests
+ * with automatic token refresh support
  */
 export function useApi() {
-  const { user } = useAuth();
-  const API_BASE_URL = 'https://api-staging.medvarsity.com';
+  const [error, setError] = useState<Error | null>(null);
+  const { user, refreshToken } = useAuth();
+
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 
   /**
-   * Makes an authenticated API request
+   * Makes an authenticated API request with automatic token refresh
    * @param endpoint API endpoint path (without base URL)
    * @param options Fetch API options
    * @returns Response data
@@ -19,38 +24,47 @@ export function useApi() {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> => {
-    if (!user?.token) {
-      throw new Error('Authentication token is missing');
-    }
-
-    const headers = {
-      'Authorization': `Bearer ${user.token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-Requested-With': 'ops',
-      ...options.headers,
-    };
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    if (!response.ok) {
-      // Handle different error status codes
-      if (response.status === 401) {
-        throw new Error('Authentication failed. Please login again.');
-      } else if (response.status === 403) {
-        throw new Error('You do not have permission to access this resource.');
+    try {
+      if (!user?.token) {
+        throw new Error('Authentication token is missing');
       }
 
-      const errorData = await response.json().catch(() => null);
-      throw new Error(
-        errorData?.message || `API request failed with status: ${response.status}`
-      );
-    }
+      // Use the interceptor for this request which handles automatic token refresh
+      const { fetchWithInterceptor } = await import('@/lib/api-interceptor');
 
-    return response.json();
+      const headers = {
+        'Authorization': `Bearer ${user.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Platform': 'cms',
+        ...options.headers,
+      };
+
+      const response = await fetchWithInterceptor(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: 'include', // Important for cookies
+      });
+
+      if (!response.ok) {
+        // Handle different error status codes
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.');
+        } else if (response.status === 403) {
+          throw new Error('You do not have permission to access this resource.');
+        }
+
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.message || `API request failed with status: ${response.status}`
+        );
+      }
+
+      return response.json();
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error('Unknown error occurred'));
+      throw error;
+    }
   };
 
   /**
@@ -108,10 +122,65 @@ export function useApi() {
     });
   };
 
+  /**
+   * Logs out the user by invalidating the token on the server
+   * This method leverages the logoutUser function from api-client
+   * to maintain a single source of truth for API calls
+   * @returns Promise that resolves with logout status
+   */
+  const logout = async (): Promise<{ success: boolean; message: string }> => {
+    if (!user?.token) {
+      console.warn('No authentication token available for logout');
+      return {
+        success: false,
+        message: 'No authentication token available'
+      };
+    }
+
+    // Use the centralized API client function for the actual API call
+    const { logoutUser } = require('@/lib/api-client');
+    return await logoutUser(user.token);
+  };
+
+  // Authentication related functions have been removed to avoid duplication
+  // These functions are already available through the AuthContext (useAuth hook)
+  // See src/context/auth-context.tsx for the implementation
+
+  /**
+   * Get the current error state
+   * @returns Current error or null
+   */
+  const getError = () => error;
+
+  /**
+   * Clear the current error state
+   */
+  const clearError = () => setError(null);
+
+  /**
+   * Manually refresh the access token
+   * Useful for pre-emptively refreshing before critical operations
+   * @returns Promise that resolves with success status
+   */
+  const refresh = async (): Promise<boolean> => {
+    try {
+      const newToken = await refreshToken();
+      return !!newToken;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      setError(error instanceof Error ? error : new Error('Token refresh failed'));
+      return false;
+    }
+  };
+
   return {
     get,
     post,
     put,
     delete: del,
+    logout,
+    refresh,
+    getError,
+    clearError
   };
 }

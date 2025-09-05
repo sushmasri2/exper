@@ -13,12 +13,14 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.3s ease forwards;
   transform-origin: top right;
   max-width: 100%;
   margin-bottom: 0.5rem;
+  position: relative;
+  overflow: hidden;
 }
 
 .closing {
@@ -68,29 +70,47 @@
   justify-content: center;
   padding: 0.25rem;
   border-radius: 9999px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  opacity: 0.7;
 }
 
 .closeButton:hover {
   background-color: rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+:global(.dark) .closeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .success {
   background-color: var(--success-50);
   border-left: 4px solid var(--success);
+  color: oklch(0.2 0 0);
 }
 
 .error {
   background-color: var(--destructive-50);
   border-left: 4px solid var(--destructive);
+  color: oklch(0.2 0 0);
 }
 
 .warning {
   background-color: var(--warning-50);
   border-left: 4px solid var(--warning-200);
+  color: oklch(0.2 0 0);
 }
 
 .info {
   background-color: var(--info-50);
   border-left: 4px solid var(--info-200);
+  color: oklch(0.2 0 0);
+}
+
+/* Dark mode toast styling */
+:global(.dark) .success,
+:global(.dark) .error,
+:global(.dark) .warning,
+:global(.dark) .info {
+  color: oklch(0.9 0 0);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./custom-toast.module.css";
 
@@ -61,14 +61,14 @@ export function CustomToast({
   const getIcon = () => {
     switch (type) {
       case "success":
-        return "✅";
+        return <CheckCircle className="stroke-success" size={20} />;
       case "error":
-        return "❌";
+        return <AlertCircle className="stroke-destructive" size={20} />;
       case "warning":
-        return "⚠️";
+        return <AlertTriangle className="stroke-warning-200" size={20} />;
       case "info":
       default:
-        return "ℹ️";
+        return <Info className="stroke-info-200" size={20} />;
     }
   };
 

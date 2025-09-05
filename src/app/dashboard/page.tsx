@@ -10,7 +10,7 @@ export default function DashboardPage() {
     <>
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Welcome, {user?.name || 'User'}!</CardTitle>
+          <CardTitle>Welcome, {user?.firstName || 'User'}!</CardTitle>
           <CardDescription>{`Here's an overview of your MedAI CMS`}</CardDescription>
         </CardHeader>
       </Card>
