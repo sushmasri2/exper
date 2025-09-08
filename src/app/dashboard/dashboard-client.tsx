@@ -11,19 +11,39 @@ import ProtectedRoute from "@/components/protected-route";
 import Breadcrumb from "@/components/breadcrumb";
 import {
   LayoutDashboard,
-  FileText,
-  Image,
+  User,
   Users,
+  Book,
+  BriefcaseMedical,
+  ComponentIcon,
   Settings,
+  HandPlatter,
   LogOut,
+  ChevronDown,
+  ChevronUp,
+  SquareDashedKanbanIcon,
+  BookOpenCheck,
+  TicketCheck,
+  CloudCheck,
+  icons
 } from "lucide-react";
 
 const navLinks = [
   { href: "/dashboard", label: "Overview", icon: <LayoutDashboard /> },
-  { href: "/dashboard/content", label: "Content", icon: <FileText /> },
-  // eslint-disable-next-line jsx-a11y/alt-text
-  { href: "/dashboard/media", label: "Media Library", icon: <Image /> },
-  { href: "/dashboard/users", label: "Users", icon: <Users /> },
+  { href: "/dashboard/courses", label: "Courses", icon: <Book />, },
+  {
+    href: "/dashboard/activities", label: "Activities", icon: <SquareDashedKanbanIcon />,
+    children: [
+      { href: "/dashboard/activities/assessments", label: "Assessments", icon: <BookOpenCheck /> },
+      { href: "/dashboard/activities/certificates", label: "Certificates",icon: <TicketCheck /> },
+    ]
+  },
+  { href: "/dashboard/cases", label: "Cases", icon: <BriefcaseMedical /> },
+  { href: "/dashboard/coupon", label: "Coupon Code", icon: <ComponentIcon /> },
+  { href: "/dashboard/roles", label: "Roles", icon: <HandPlatter /> },
+  { href: "/dashboard/members", label: "Members", icon: <Users /> },
+  { href: "/dashboard/successstories", label: "Success Stories", icon: <CloudCheck /> },
+  { href: "/dashboard/profile", label: "Profile", icon: <User /> },
   { href: "/dashboard/settings", label: "Settings", icon: <Settings /> },
 ];
 
@@ -35,6 +55,7 @@ export function DashboardClient({
   const pathname = usePathname();
   const { logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<string[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -44,9 +65,24 @@ export function DashboardClient({
     }
   };
 
+  const toggleDropdown = (href: string) => {
+    setOpenDropdowns(prev =>
+      prev.includes(href)
+        ? prev.filter(item => item !== href)
+        : [...prev, href]
+    );
+  };
+
   const getPageTitle = () => {
     // For specific pages, return their exact titles
     if (pathname === "/dashboard") return "Overview";
+    if (pathname === "/dashboard/courses") return "Courses";
+    if (pathname === "/dashboard/activities/assessments") return "Assessments";
+    if (pathname === "/dashboard/activities/certificates") return "Certificates";
+    if (pathname === "/dashboard/cases") return "Cases";
+    if (pathname === "/dashboard/coupon") return "Coupon Code";
+    if (pathname === "/dashboard/roles") return "Roles";
+    if (pathname === "/dashboard/members") return "Members";
     if (pathname === "/dashboard/profile") return "Profile";
     if (pathname === "/dashboard/settings") return "Settings";
 
@@ -103,9 +139,8 @@ export function DashboardClient({
         </button>
 
         <aside
-          className={`${styles.sidebar} ${
-            mobileMenuOpen ? styles.sidebarOpen : ""
-          }`}
+          className={`${styles.sidebar} ${mobileMenuOpen ? styles.sidebarOpen : ""
+            }`}
         >
           <div className={styles.sidebarHeader}>
             <h1 className={styles.logo}>MedAI CMS</h1>
@@ -119,18 +154,56 @@ export function DashboardClient({
                     ? pathname === "/dashboard"
                     : pathname.startsWith(link.href);
 
+                const isDropdownOpen = openDropdowns.includes(link.href);
+                const hasChildren = link.children && link.children.length > 0;
+
                 return (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={`${styles.navLink} ${
-                        isActive ? styles.active : ""
-                      }`}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <span className={styles.navIcon}>{link.icon}</span>
-                      <span className={styles.navText}>{link.label}</span>
-                    </Link>
+                    {hasChildren ? (
+                      <>
+                        <div
+                          className={`${styles.navLink} ${isActive ? styles.active : ""
+                            } ${styles.dropdownTrigger}`}
+                          onClick={() => toggleDropdown(link.href)}
+                        >
+                          <span className={styles.navIcon}>{link.icon}</span>
+                          <span className={styles.navText}>{link.label}</span>
+                          <span className={styles.chevronIcon}>
+                            {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </span>
+                        </div>
+                        {isDropdownOpen && (
+                          <ul className={styles.dropdown}>
+                            {link.children.map((child) => {
+                              const isChildActive = pathname === child.href;
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    className={`${styles.navLink} ${styles.childNavLink} ${isChildActive ? styles.active : ""
+                                      }`}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                  >
+                                    <span className={styles.navIcon}>{child.icon}</span>
+                                    <span className={styles.navText}>{child.label}</span>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className={`${styles.navLink} ${isActive ? styles.active : ""
+                          }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span className={styles.navIcon}>{link.icon}</span>
+                        <span className={styles.navText}>{link.label}</span>
+                      </Link>
+                    )}
                   </li>
                 );
               })}
