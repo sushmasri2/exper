@@ -1,5 +1,5 @@
 "use client";
 
-export default function Successstories() {
+export default function SuccessStories() {
   return <div>Success Stories</div>;
 }

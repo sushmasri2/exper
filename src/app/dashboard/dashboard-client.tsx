@@ -25,26 +25,42 @@ import {
   BookOpenCheck,
   TicketCheck,
   CloudCheck,
+  Building,
+  Tag,
+  ShieldBan,
+  CardSim,
+  ShieldQuestionMark,
+  GraduationCap,
+  MessagesSquare,
   icons
 } from "lucide-react";
 
 const navLinks = [
   { href: "/dashboard", label: "Overview", icon: <LayoutDashboard /> },
-  { href: "/dashboard/courses", label: "Courses", icon: <Book />, },
+  { href: "/dashboard/coursesbuilder", label: "Courses Builder", icon: <Building /> },
+  { href: "/dashboard/courses", label: "Courses", icon: <Book /> },
+  { href: "/dashboard/categories", label: "Courses Categories", icon: <Tag /> },
   {
     href: "/dashboard/activities", label: "Activities", icon: <SquareDashedKanbanIcon />,
     children: [
       { href: "/dashboard/activities/assessments", label: "Assessments", icon: <BookOpenCheck /> },
-      { href: "/dashboard/activities/certificates", label: "Certificates",icon: <TicketCheck /> },
+      { href: "/dashboard/activities/certificates", label: "Certificates", icon: <TicketCheck /> },
+      { href: "/dashboard/activities/discussionforum", label: "Discussion Forum", icon: <MessagesSquare /> },
     ]
   },
   { href: "/dashboard/cases", label: "Cases", icon: <BriefcaseMedical /> },
   { href: "/dashboard/coupon", label: "Coupon Code", icon: <ComponentIcon /> },
-  { href: "/dashboard/roles", label: "Roles", icon: <HandPlatter /> },
-  { href: "/dashboard/members", label: "Members", icon: <Users /> },
   { href: "/dashboard/successstories", label: "Success Stories", icon: <CloudCheck /> },
-  { href: "/dashboard/profile", label: "Profile", icon: <User /> },
-  { href: "/dashboard/settings", label: "Settings", icon: <Settings /> },
+  {
+    href: "/dashboard/settings/general", label: "Settings", icon: <Settings />,
+    children: [
+      { href: "/dashboard/settings/general", label: "General", icon: <BookOpenCheck /> },
+      { href: "/dashboard/settings/coursetype", label: "Course Type", icon: <GraduationCap /> },
+      { href: "/dashboard/settings/eligibility", label: "Eligibility", icon: <ShieldBan /> },
+      { href: "/dashboard/settings/lti", label: "LTI Provider", icon: <CardSim /> },
+      { href: "/dashboard/settings/faq", label: "Course FAQ", icon: <ShieldQuestionMark /> },
+    ]
+  },
 ];
 
 export function DashboardClient({
@@ -76,15 +92,19 @@ export function DashboardClient({
   const getPageTitle = () => {
     // For specific pages, return their exact titles
     if (pathname === "/dashboard") return "Overview";
+    if (pathname === "/dashboard/coursesbuilder") return "Courses Builder";
     if (pathname === "/dashboard/courses") return "Courses";
+    if (pathname === "/dashboard/categories") return "Courses Categories";
     if (pathname === "/dashboard/activities/assessments") return "Assessments";
     if (pathname === "/dashboard/activities/certificates") return "Certificates";
+    if (pathname === "/dashboard/activities/discussionforum") return "Discussion Forum";
     if (pathname === "/dashboard/cases") return "Cases";
     if (pathname === "/dashboard/coupon") return "Coupon Code";
-    if (pathname === "/dashboard/roles") return "Roles";
-    if (pathname === "/dashboard/members") return "Members";
-    if (pathname === "/dashboard/profile") return "Profile";
-    if (pathname === "/dashboard/settings") return "Settings";
+    if (pathname === "/dashboard/settings/general") return "Settings";
+    if (pathname === "/dashboard/settings/eligibility") return "Eligibility ";
+    if (pathname === "/dashboard/settings/coursetype") return "Course Type";
+    if (pathname === "/dashboard/settings/lti") return "LTI Provider ";
+    if (pathname === "/dashboard/settings/faq") return "Course FAQ";
 
     // For other pages, get from navLinks
     const currentLink = navLinks.find((link) => pathname.startsWith(link.href));
