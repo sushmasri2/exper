@@ -37,7 +37,7 @@ import {
 
 const navLinks = [
   { href: "/dashboard", label: "Overview", icon: <LayoutDashboard /> },
-  { href: "/dashboard/coursesbuilder", label: "Courses Builder", icon: <Building /> },
+  { href: "/dashboard/buildercourses", label: "Courses Builder", icon: <Building /> },
   { href: "/dashboard/courses", label: "Courses", icon: <Book /> },
   { href: "/dashboard/categories", label: "Courses Categories", icon: <Tag /> },
   {
@@ -92,7 +92,7 @@ export function DashboardClient({
   const getPageTitle = () => {
     // For specific pages, return their exact titles
     if (pathname === "/dashboard") return "Overview";
-    if (pathname === "/dashboard/coursesbuilder") return "Courses Builder";
+    if (pathname === "/dashboard/buildercourses") return "Courses Builder";
     if (pathname === "/dashboard/courses") return "Courses";
     if (pathname === "/dashboard/categories") return "Courses Categories";
     if (pathname === "/dashboard/activities/assessments") return "Assessments";
@@ -244,7 +244,6 @@ export function DashboardClient({
           <header className={styles.header}>
             <div className={styles.headerContent}>
               {renderBreadcrumbs()}
-
               <div className={styles.userInfo}>
                 <ModeToggle />
                 <UserAvatar />

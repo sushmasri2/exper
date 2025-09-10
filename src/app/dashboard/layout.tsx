@@ -1,11 +1,8 @@
 import { DashboardClient } from "./dashboard-client";
-import { Metadata } from "next";
-
+// Importing metadata for Next.js support
+import { metadata } from "./metadata";
+export { metadata };
 // We can safely export metadata from this server component
-export const metadata: Metadata = {
-  title: "Dashboard | MedAI Content",
-  description: "Manage your MedAI content from the dashboard.",
-};
 
 export default function DashboardLayout({
   children,

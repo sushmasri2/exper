@@ -1,19 +1,19 @@
 "use client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import styles from './coursepage.module.css';
+import styles from './createcourse.module.css';
 import { Save, SquareArrowOutUpRight, MonitorStop, TabletSmartphone, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 // Import tab content components
-import CourseBuilder from "./CourseBuilder";
-import CourseSettings from "./CourseSettings";
-import CoursePrice from "./CoursePrice";
-import Seo from "./Seo";
-import RecommendedCourses from "./RecommendedCourses";
-import Patrons from "./Patrons";
-import Logs from "./Logs";
+import CourseBuilder from "./CourseBuilder/page";
+import CourseSettings from "./CourseSettings/page";
+import CoursePrice from "./CoursePrice/page";
+import Seo from "./Seo/page";
+import RecommendedCourses from "./RecommendedCourses/page";
+import Patrons from "./Patrons/page";
+import Logs from "./Logs/page";
 
 
 const tabList = [
@@ -30,7 +30,7 @@ export default function createCourse() {
   const pathname = usePathname();
   // Extract tab from path: /dashboard/courses/[tab]
   const pathSegments = pathname.split("/");
-  const tabSegment = pathSegments[3] || "courseBuilder";
+const tabSegment = pathSegments[pathSegments.length - 1] || "courseBuilder";
   const [activeTab, setActiveTab] = useState(tabSegment);
 
   useEffect(() => {

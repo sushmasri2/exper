@@ -1,0 +1,38 @@
+/* coursepage.module.css */
+.container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+
+.header {
+  background: linear-gradient(90deg, #4F46E5, #7C3AED);
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.courseSectionButtons {
+  display: flex;
+  gap: 15px;
+}
+
+.tabs {
+  background: #f8fafc;
+}
+
+.tabsList {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  border-radius: 0px;
+}
+
+.tabContent {
+  padding: 30px;
+}
