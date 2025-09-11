@@ -66,7 +66,7 @@ async function verifyGoogleIdToken(idToken: string) {
   try {
     // Get the Google client ID from environment variables
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    // const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // Not used in this function
 
     if (!clientId) {
       console.error('Missing Google client ID');

@@ -27,8 +27,8 @@ export function UserAvatar() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer">
-                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} alt={user?.name || "User"} />
-                    <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                    <AvatarImage src={user?.avatar || "https://github.com/shadcn.png"} alt={`${user?.firstName || ''} ${user?.lastName || ''}`.trim() || "User"} />
+                    <AvatarFallback>{(user?.firstName?.charAt(0) || user?.lastName?.charAt(0) || 'U')}</AvatarFallback>
                 </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

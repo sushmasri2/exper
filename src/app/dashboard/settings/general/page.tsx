@@ -8,6 +8,11 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('appearance');
   const [saving, setSaving] = useState(false);
 
+  // Notification states
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [systemNotifications, setSystemNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(false);
+
   const handleApplyChanges = () => {
     setSaving(true);
 
@@ -23,7 +28,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Tabs Navigation */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg px-6 ring shadow-xl ring-gray-900/5 overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex -mb-px">
             <button
@@ -59,13 +64,13 @@ export default function SettingsPage() {
                     className={`border-2 ${pendingTheme === 'light' ? 'border-blue-500 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'} p-4 rounded-lg cursor-pointer bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all`}
                     onClick={() => setPendingTheme('light')}
                   >
-                    <div className="h-12 w-full bg-white border border-gray-200 rounded-md mb-2"></div>
+                    <div className="h-12 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md mb-2"></div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">Light</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Light background with dark text</p>
                   </div>
 
                   <div
-                    className={`border-2 ${pendingTheme === 'dark' ? 'border-blue-500 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'} p-4 rounded-lg cursor-pointer bg-gray-900 dark:bg-gray-900 hover:bg-gray-800 dark:hover:bg-black transition-all`}
+                    className={`border-2 ${pendingTheme === 'dark' ? 'border-blue-500 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'} p-4 rounded-lg cursor-pointer bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 dark:hover:bg-gray-700 transition-all`}
                     onClick={() => setPendingTheme('dark')}
                   >
                     <div className="h-12 w-full bg-gray-900 border border-gray-700 rounded-md mb-2"></div>
@@ -74,7 +79,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div
-                    className={`border-2 ${pendingTheme === 'system' ? 'border-blue-500 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'} p-4 rounded-lg cursor-pointer bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-blue-100 hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-800 transition-all`}
+                    className={`border-2 ${pendingTheme === 'system' ? 'border-blue-500 dark:border-blue-400' : 'border-gray-200 dark:border-gray-700'} p-4 rounded-lg cursor-pointer bg-gradient-to-r from-blue-50 to-white dark:from-gray-700 dark:to-gray-800 hover:from-blue-100 hover:to-gray-50 dark:hover:from-gray-600 dark:hover:to-gray-700 transition-all`}
                     onClick={() => setPendingTheme('system')}
                   >
                     <div className="h-12 w-full bg-gradient-to-r from-white to-gray-900 rounded-md mb-2"></div>
@@ -92,7 +97,7 @@ export default function SettingsPage() {
                       id="compact"
                       name="density"
                       type="radio"
-                      className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600"
+                      className="h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-600 dark:focus:ring-blue-500 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800"
                       checked={pendingDensity === 'compact'}
                       onChange={() => setPendingDensity('compact')}
                     />
@@ -106,7 +111,7 @@ export default function SettingsPage() {
                       id="comfortable"
                       name="density"
                       type="radio"
-                      className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600"
+                      className="h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-600 dark:focus:ring-blue-500 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800"
                       checked={pendingDensity === 'comfortable'}
                       onChange={() => setPendingDensity('comfortable')}
                     />
@@ -120,7 +125,7 @@ export default function SettingsPage() {
                       id="spacious"
                       name="density"
                       type="radio"
-                      className="h-4 w-4 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 border-gray-300 dark:border-gray-600"
+                      className="h-4 w-4 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 focus:ring-blue-600 dark:focus:ring-blue-500 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800"
                       checked={pendingDensity === 'spacious'}
                       onChange={() => setPendingDensity('spacious')}
                     />
@@ -150,20 +155,64 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Email notifications</span>
-                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700">
-                      <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-blue-600 transition"></span>
+                    <button
+                      type="button"
+                      onClick={() => setEmailNotifications(!emailNotifications)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent ${
+                        emailNotifications ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                      } transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2`}
+                    >
+                      <span className="sr-only">
+                        {emailNotifications ? 'Disable' : 'Enable'} email notifications
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          emailNotifications ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      ></span>
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">System notifications</span>
-                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700">
-                      <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-blue-600 transition"></span>
+                    <button
+                      type="button"
+                      onClick={() => setSystemNotifications(!systemNotifications)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent ${
+                        systemNotifications ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                      } transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2`}
+                    >
+                      <span className="sr-only">
+                        {systemNotifications ? 'Disable' : 'Enable'} system notifications
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          systemNotifications ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      ></span>
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700 dark:text-gray-300">Push notifications</span>
-                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700">
-                      <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white dark:bg-gray-400 transition"></span>
+                    <button
+                      type="button"
+                      onClick={() => setPushNotifications(!pushNotifications)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent ${
+                        pushNotifications ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                      } transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2`}
+                    >
+                      <span className="sr-only">
+                        {pushNotifications ? 'Disable' : 'Enable'} push notifications
+                      </span>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full ${
+                          pushNotifications ? 'bg-white' : 'bg-white dark:bg-gray-400'
+                        } shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          pushNotifications ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      ></span>
                     </button>
                   </div>
                 </div>

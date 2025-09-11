@@ -172,7 +172,7 @@ export const authCookies = {
    * @param token The auth token value
    * @param options Cookie options
    */
-  setAuthToken(token: string, options: any = {}): void {
+  setAuthToken(token: string, options: { expires?: number; [key: string]: unknown } = {}): void {
     setCookie(this.getAuthCookieName(), token, {
       // Secure by default in production
       secure: process.env.NODE_ENV === 'production',
@@ -197,7 +197,7 @@ export const authCookies = {
   /**
    * Remove the authentication token cookie
    */
-  removeAuthToken(options: any = {}): void {
+  removeAuthToken(options: { [key: string]: unknown } = {}): void {
     deleteCookie(this.getAuthCookieName(), {
       path: '/',
       secure: process.env.NODE_ENV === 'production',

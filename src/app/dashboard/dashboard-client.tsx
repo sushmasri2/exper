@@ -11,13 +11,10 @@ import ProtectedRoute from "@/components/protected-route";
 import Breadcrumb from "@/components/breadcrumb";
 import {
   LayoutDashboard,
-  User,
-  Users,
   Book,
   BriefcaseMedical,
   ComponentIcon,
   Settings,
-  HandPlatter,
   LogOut,
   ChevronDown,
   ChevronUp,
@@ -32,7 +29,9 @@ import {
   ShieldQuestionMark,
   GraduationCap,
   MessagesSquare,
-  icons
+  MapPin,
+  ChartCandlestick,
+  ClipboardPlus
 } from "lucide-react";
 
 const navLinks = [
@@ -59,6 +58,9 @@ const navLinks = [
       { href: "/dashboard/settings/eligibility", label: "Eligibility", icon: <ShieldBan /> },
       { href: "/dashboard/settings/lti", label: "LTI Provider", icon: <CardSim /> },
       { href: "/dashboard/settings/faq", label: "Course FAQ", icon: <ShieldQuestionMark /> },
+      { href: "/dashboard/settings/region", label: "Region", icon: <MapPin /> },
+      { href: "/dashboard/settings/currency", label: "Currency", icon: <ChartCandlestick /> },
+      { href: "/dashboard/settings/specialities", label: "Specialities", icon: <ClipboardPlus /> },
     ]
   },
 ];
@@ -105,6 +107,9 @@ export function DashboardClient({
     if (pathname === "/dashboard/settings/coursetype") return "Course Type";
     if (pathname === "/dashboard/settings/lti") return "LTI Provider ";
     if (pathname === "/dashboard/settings/faq") return "Course FAQ";
+    if (pathname === "/dashboard/settings/region") return "Region";
+    if (pathname === "/dashboard/settings/currency") return "Currency";
+    if (pathname === "/dashboard/settings/specialities") return "Specialities";
 
     // For other pages, get from navLinks
     const currentLink = navLinks.find((link) => pathname.startsWith(link.href));

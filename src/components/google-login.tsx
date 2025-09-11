@@ -42,7 +42,7 @@ function GoogleLoginComponent({ onSuccess, onError, disabled }: GoogleLoginProps
   // Keep track of initialization status to prevent re-initialization
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const handleCredentialResponse = useCallback(async (response: any) => {
+  const handleCredentialResponse = useCallback(async (response: { credential: string }) => {
     if (!response.credential) return;
 
     setIsLoading(true);
@@ -116,9 +116,9 @@ function GoogleLoginComponent({ onSuccess, onError, disabled }: GoogleLoginProps
         window.google.accounts.id.cancel();
       }
     };
-  }, [isInitialized, onError]);
+  }, [isInitialized, onError, handleCredentialResponse]);
 
-  // handleCredentialResponse is now defined above using useCallback
+  // handleCredentialResponse is defined above using useCallback and included in the dependency array
 
   return (
     <div className={styles.googleSigninContainer}>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { useApi } from '@/hooks/use-api';
+// import { useApi } from '@/hooks/use-api'; // Not used in this component
 import { showToast } from '@/lib/toast';
 import { detectInputType, maskEmail, maskMobile } from '@/lib/input-validator';
 import styles from './login.module.css';
@@ -27,7 +27,8 @@ function LoginContent() {
   const [identifier, setIdentifier] = useState(''); // Single input for email or mobile
   const [otp, setOtp] = useState('');
   const [detectedType, setDetectedType] = useState<'email' | 'mobile' | 'invalid'>('invalid');
-  const [formattedValue, setFormattedValue] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in useEffect
+  const [formattedValue, setFormattedValue] = useState(''); // Used internally for formatting
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
 
   // UI states
@@ -66,6 +67,8 @@ function LoginContent() {
   useEffect(() => {
     const detection = detectInputType(identifier);
     setDetectedType(detection.type);
+    // Formatted value is saved but not used elsewhere currently
+    // Could be useful for display or validation in the future
     setFormattedValue(detection.formatted);
   }, [identifier]);
 

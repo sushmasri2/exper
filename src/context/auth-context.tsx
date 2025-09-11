@@ -76,10 +76,8 @@ const createSecureStorage = (key: string) => {
 
 const userStorage = createSecureStorage('medai_user');
 
-// Don't try to get the user during SSR
-const getInitialUser = (): User | null => {
-  return null; // Always return null for initial state to avoid hydration mismatch
-};
+// Initial user is always null to avoid hydration mismatch
+// (Client-side hydration happens in the useEffect inside AuthProvider)
 
 // AuthProvider component
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -120,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Platform': 'cms',
         },
         body: JSON.stringify({ email }),
         credentials: 'include'
@@ -168,7 +165,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Platform': 'cms',
         },
         body: JSON.stringify({ mobile }),
         credentials: 'include'
@@ -220,7 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Platform': 'cms',
         },
         body: JSON.stringify({ email, otp, purpose: 'login' }),
         credentials: 'include'
@@ -301,7 +296,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Platform': 'cms',
         },
         body: JSON.stringify({ mobile, otp, purpose: 'login' }),
         credentials: 'include'
@@ -386,10 +380,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${tokenToUse}`,
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              'Platform': 'cms',
             },
             credentials: 'include'
           });
@@ -443,7 +435,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Platform': 'cms',
         },
         body: JSON.stringify({ id_token: credential }),
         credentials: 'include'
@@ -531,7 +522,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // If not forcing, use the check and refresh function
       if (!force) {
-        const { checkAndRefreshToken, refreshAccessToken } = await import('@/lib/api-interceptor');
+        const { checkAndRefreshToken } = await import('@/lib/api-interceptor');
 
         // First check if we need to refresh
         const wasRefreshed = await checkAndRefreshToken();

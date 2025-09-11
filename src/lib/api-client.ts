@@ -144,12 +144,11 @@ export interface ErrorResponse {
  */
 export async function authenticateWithGoogle(idToken: string): Promise<AuthResponse | { success: false, message: string }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/google/callback`, {
+    const response = await fetchWithHeaders(`${API_BASE_URL}/auth/google/callback`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Platform': 'cms',
       },
       body: JSON.stringify({ id_token: idToken }),
       credentials: 'include'
@@ -198,22 +197,19 @@ export async function authenticateWithGoogle(idToken: string): Promise<AuthRespo
 /**
  * Logout the user by invalidating the token on the server
  * This ensures logout from all applications using the same authentication service
- * @param token Authentication token
+ * Token is automatically handled by the interceptor
  * @returns Success status of the logout operation
  */
-export async function logoutUser(token: string): Promise<{ success: boolean; message: string }> {
+export async function logoutUser(): Promise<{ success: boolean; message: string }> {
   try {
     const logoutUrl = `${API_BASE_URL}/auth/logout`;
 
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Platform': 'cms',
-    };
-    const response = await fetch(logoutUrl, {
+    const response = await fetchWithHeaders(logoutUrl, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       credentials: 'include',
     });
 
@@ -221,7 +217,8 @@ export async function logoutUser(token: string): Promise<{ success: boolean; mes
       let errorData;
       try {
         errorData = await response.json();
-      } catch (e) {
+      } catch {
+        // JSON parsing failed, use default error message
         errorData = { error: 'Failed to parse response JSON' };
       }
 

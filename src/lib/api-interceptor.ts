@@ -1,5 +1,5 @@
 import { authCookies } from './cookie-utils';
-import { showToast } from './toast';
+// import { showToast } from './toast'; // Not currently used in this file
 
 /**
  * Base API URL for Medvarsity API
@@ -109,7 +109,7 @@ export async function refreshAccessToken(): Promise<string> {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Platform': 'cms'
+        'Platform': process.env.NEXT_PUBLIC_PLATFORM || 'cms'
       },
       credentials: 'include' // Important for sending cookies
     });
@@ -170,7 +170,7 @@ export async function fetchWithInterceptor(
   requestOptions.headers = new Headers(requestOptions.headers || {});
 
   // Add Platform header
-  (requestOptions.headers as Headers).set('Platform', 'cms');
+  (requestOptions.headers as Headers).set('Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
 
   // Check for token and handle preemptive refresh if needed
   let token = authCookies.getAuthToken();
@@ -182,7 +182,7 @@ export async function fetchWithInterceptor(
     // If a refresh is already in progress, wait for it to complete
     if (isRefreshing) {
       try {
-        token = await new Promise<string>((resolve, reject) => {
+        token = await new Promise<string>((resolve) => {
           refreshCallbackQueue.push((refreshedToken: string) => {
             resolve(refreshedToken);
           });
@@ -215,7 +215,7 @@ export async function fetchWithInterceptor(
   }
 
   // Make the initial request
-  let response = await fetch(url, requestOptions);  // If response is 401 (Unauthorized), try to refresh the token
+  const response = await fetch(url, requestOptions);  // If response is 401 (Unauthorized), try to refresh the token
   if (response.status === 401) {
     // Check if we should attempt a token refresh
     const shouldRefresh = authCookies.hasAuthToken();
@@ -230,12 +230,12 @@ export async function fetchWithInterceptor(
     // If a refresh is already in progress, wait for it to complete
     if (isRefreshing) {
       try {
-        newToken = await new Promise<string>((resolve, reject) => {
+        newToken = await new Promise<string>((resolve) => {
           refreshCallbackQueue.push((token: string) => {
             resolve(token);
           });
         });
-      } catch (error) {
+      } catch {
         return response; // Return original 401 response if refresh fails
       }
     } else {
@@ -246,7 +246,7 @@ export async function fetchWithInterceptor(
         newToken = await refreshAccessToken();
         // Process all queued requests with the new token
         processQueue(newToken);
-      } catch (error) {
+      } catch {
         // Refresh failed, reject all queued requests
         return response;
       } finally {

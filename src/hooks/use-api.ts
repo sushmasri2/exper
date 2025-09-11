@@ -33,10 +33,8 @@ export function useApi() {
       const { fetchWithInterceptor } = await import('@/lib/api-interceptor');
 
       const headers = {
-        'Authorization': `Bearer ${user.token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Platform': 'cms',
         ...options.headers,
       };
 
@@ -138,8 +136,8 @@ export function useApi() {
     }
 
     // Use the centralized API client function for the actual API call
-    const { logoutUser } = require('@/lib/api-client');
-    return await logoutUser(user.token);
+    const { logoutUser } = await import('@/lib/api-client');
+    return await logoutUser();
   };
 
   // Authentication related functions have been removed to avoid duplication

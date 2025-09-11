@@ -41,8 +41,9 @@ function AvatarFallback({
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
+      style={{ backgroundColor: 'var(--muted)' }}
       className={cn(
-        "bg-muted flex size-full items-center justify-center rounded-full",
+        "flex size-full items-center justify-center rounded-full",
         className
       )}
       {...props}

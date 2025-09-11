@@ -7,13 +7,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 // Import tab content components
-import CourseBuilder from "./CourseBuilder/page";
-import CourseSettings from "./CourseSettings/page";
-import CoursePrice from "./CoursePrice/page";
-import Seo from "./Seo/page";
-import RecommendedCourses from "./RecommendedCourses/page";
-import Patrons from "./Patrons/page";
-import Logs from "./Logs/page";
+import CourseBuilder from "./coursebuilder/page";
+import CourseSettings from "./coursesettings/page";
+import CoursePrice from "./courseprice/page";
+import Seo from "./seo/page";
+import RecommendedCourses from "./recommendedcourses/page";
+import Patrons from "./patrons/page";
+import Logs from "./logs/page";
 
 
 const tabList = [
@@ -25,7 +25,7 @@ const tabList = [
   { value: "patrons", label: "Patrons", Component: Patrons, path: "patrons" },
   { value: "logs", label: "Logs", Component: Logs, path: "logs" },
 ];
-export default function createCourse() {
+export default function CreateCourse() {
   const router = useRouter();
   const pathname = usePathname();
   // Extract tab from path: /dashboard/courses/[tab]
