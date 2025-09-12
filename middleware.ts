@@ -4,13 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   // Clone the request headers
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('Platform', 'cms');
+  requestHeaders.set('Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
   const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
-  response.headers.set('Platform', 'cms');
+  response.headers.set('Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
   return response;
 }
 

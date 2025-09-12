@@ -19,12 +19,6 @@ export default function Courses() {
   const [selectedCourse, setSelectedCourse] = useState("Select Course");
   const [sortByOption, setSortByOption] = useState("Newest");
 
-  const courseName = [
-    { value: "fccm", label: "Fellowship in Critical Care Medicine" },
-    { value: "cccm", label: "Certificate in Critical Care Medicine" },
-    { value: "accm", label: "Adavance Certificate in Critical Care Medicine" },
-    { value: "mccm", label: "Master in Critical Care Medicine" },
-  ];
 
   const sortBy = [
     { label: "Newest", value: "newest" },
@@ -58,7 +52,7 @@ export default function Courses() {
   const handleCreateNewCourse = () => {
     const newCourseTitle = "New Course " + Date.now(); // You can customize this
     const courseSlug = generateSlug(newCourseTitle);
-    return `/dashboard/courses/courseStructure/${courseSlug}`;
+    return `/dashboard/courses/courseBuilder/${courseSlug}`;
   };
 
   return (
@@ -87,12 +81,12 @@ export default function Courses() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {courseName.map((course) => (
+              {coursesList.map((course) => (
                 <DropdownMenuItem
-                  key={course.value}
-                  onClick={() => setSelectedCourse(course.label)}
+                  key={course.slug}
+                  onClick={() => setSelectedCourse(course.title)}
                 >
-                  {course.label}
+                  {course.title}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -122,7 +116,7 @@ export default function Courses() {
         {/* Right: Create Button and View Toggle - Fixed width */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Create Button */}
-          <Link href="/dashboard/courses/courseStructure">
+          <Link href="/dashboard/courses/courseBuilder">
             <Button variant='courseCreate' className="whitespace-nowrap">
               <Plus size={16} /> Create New Course
             </Button>
@@ -153,7 +147,7 @@ export default function Courses() {
         {view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {coursesList.map((course) => (
-              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
+              <Link href={`/dashboard/courses/CourseBuilder/${course.slug}`} key={course.id}>
                 <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
                   <h2 className="text-lg font-semibold">{course.title}</h2>
                   <p className="text-gray-500">{course.description}</p>
@@ -164,7 +158,7 @@ export default function Courses() {
         ) : (
           <div className="space-y-4">
             {coursesList.map((course) => (
-              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
+              <Link href={`/dashboard/courses/courseBuilder/${course.slug}`} key={course.id}>
                 <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
                   <h2 className="text-lg font-semibold">{course.title}</h2>
                   <p className="text-gray-500">{course.description}</p>
