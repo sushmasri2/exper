@@ -1,81 +1,147 @@
 "use client";
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Plus, Grid, List, ChevronDown } from "lucide-react";
-import styles from "./coursepage.module.css";
 
 export default function Courses() {
   const [view, setView] = useState("grid");
+  const [selectedCourse, setSelectedCourse] = useState("Select Course");
+  const [sortByOption, setSortByOption] = useState("Newest");
+
+  const courseName = [
+    { value: "fccm", label: "Fellowship in Critical Care Medicine" },
+    { value: "cccm", label: "Certificate in Critical Care Medicine" },
+    { value: "accm", label: "Adavance Certificate in Critical Care Medicine" },
+    { value: "mccm", label: "Master in Critical Care Medicine" },
+  ];
+  const sortBy = [
+    { label: "Newest", value: "newest" },
+    { label: "Oldest", value: "oldest" },
+    { label: "A-Z", value: "a-z" },
+    { label: "Z-A", value: "z-a" },
+  ];
+
+  const coursesList = [
+    { id: 1, title: "Course 1", description: "Description for Course 1", link: "/dashboard/courses/courseBuilder" },
+    { id: 2, title: "Course 2", description: "Description for Course 2", link: "/dashboard/courses/courseBuilder" },
+    { id: 3, title: "Course 3", description: "Description for Course 3", link: "/dashboard/courses/courseBuilder" },
+  ]
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        {/* Left Section */}
-        <h2 className={styles.h2}>All Courses(466)</h2>
-        <div className={styles.courseInfo}>
-          {/* Search */}
+    <div className="shadow-sm p-6 bg-white rounded-lg">
+      {/* Header Row */}
+      <div className="flex items-center justify-between gap-6 mb-6">
+        {/* Left: Title - Fixed width */}
+        <div className="flex-shrink-0">
+          <h1 className="text-lg font-medium text-gray-900 whitespace-nowrap">All Courses(466)</h1>
+        </div>
+
+        {/* Center: Search and Filters - Flexible width */}
+        <div className="flex items-center gap-4 flex-1 max-w-4xl">
+          {/* Search - 30% of center area */}
           <Input
             placeholder="Search courses..."
-            className="max-w-xs"
+            className="flex-[3] rounded-full border-gray-300"
           />
 
-          {/* Filter Dropdown */}
+          {/* Filter Dropdown - 40% of center area */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                All Courses <ChevronDown size={16} />
+              <Button variant="outline" className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between">
+                <span className="truncate">{selectedCourse}</span>
+                <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>All Courses</DropdownMenuItem>
-              <DropdownMenuItem>My Courses</DropdownMenuItem>
-              <DropdownMenuItem>Completed</DropdownMenuItem>
+              {courseName.map((course) => (
+                <DropdownMenuItem
+                  key={course.value}
+                  onClick={() => setSelectedCourse(course.label)}
+                >
+                  {course.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Sort Dropdown */}
+          {/* Sort Dropdown - 30% of center area */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                Sort by: Newest <ChevronDown size={16} />
+              <Button variant="outline" className="flex-[3]  gap-2 rounded-lg border-gray-300 text-left justify-between">
+                <span className="truncate">{sortByOption}</span>
+                <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>Newest</DropdownMenuItem>
-              <DropdownMenuItem>Oldest</DropdownMenuItem>
-              <DropdownMenuItem>Alphabetical</DropdownMenuItem>
+              {sortBy.map((sortby) => (
+                <DropdownMenuItem
+                  key={sortby.value}
+                  onClick={() => setSortByOption(sortby.label)}
+                >
+                  {sortby.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        {/* Create Button */}
-        <Link href="/dashboard/courses/courseBuilder">
-          <Button variant="courseCreate">
-            <Plus size={16} /> Create New Course
-          </Button>
-        </Link>
+        {/* Right: Create Button and View Toggle - Fixed width */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Create Button */}
+          <Link href="/dashboard/courses/courseBuilder">
+            <Button variant='courseCreate' className="whitespace-nowrap">
+              <Plus size={16} /> Create New Course
+            </Button>
+          </Link>
 
-        {/* View Toggle */}
-        <div className="flex items-center border rounded-lg overflow-hidden">
-          <Button
-            variant={view === "grid" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => setView("grid")}
-          >
-            <Grid size={16} />
-          </Button>
-          <Button
-            variant={view === "list" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => setView("list")}
-          >
-            <List size={16} />
-          </Button>
+          {/* View Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <Button
+              variant={view === "grid" ? "courseCreate" : "default"}
+              size="icon"
+              onClick={() => setView("grid")}
+            >
+              <Grid size={16} />
+            </Button>
+            <Button
+              variant={view === "list" ? "courseCreate" : "default"}
+              size="icon"
+              onClick={() => setView("list")}
+            >
+              <List size={16} />
+            </Button>
+          </div>
         </div>
+      </div>
+
+      {/* Course Content */}
+      <div>
+        {view === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {coursesList.map((course) => (
+              <Link href={course.link} key={course.id}>
+                <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
+                  <h2 className="text-lg font-semibold">{course.title}</h2>
+                  <p className="text-gray-500">{course.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {coursesList.map((course) => (
+              <Link href={course.link} key={course.id}>
+                <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
+                  <h2 className="text-lg font-semibold">{course.title}</h2>
+                  <p className="text-gray-500">{course.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

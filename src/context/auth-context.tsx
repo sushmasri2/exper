@@ -89,17 +89,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Only run on client-side
-    const storedUser = userStorage.getItem();
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse user from storage", error);
-        userStorage.removeItem();
+    const SESSION_CACHE_KEY = 'medai_sso_session_cache';
+    const SESSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+    const checkSession = async () => {
+      // 1. Try to load user from local storage (for fast hydration)
+      const storedUser = userStorage.getItem();
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Failed to parse user from storage", error);
+          userStorage.removeItem();
+        }
       }
-    }
-    // Always set loading to false after checking for a stored user
-    setLoading(false);
+
+      // 2. Check session cache in sessionStorage
+      let shouldFetchSession = true;
+      if (typeof window !== 'undefined') {
+        const cacheRaw = sessionStorage.getItem(SESSION_CACHE_KEY);
+        if (cacheRaw) {
+          try {
+            const cache = JSON.parse(cacheRaw);
+            if (cache.timestamp && Date.now() - cache.timestamp < SESSION_CACHE_TTL && cache.user) {
+              setUser(cache.user);
+              if (cache.accessToken) sessionStorage.setItem('accessToken', cache.accessToken);
+              userStorage.setItem(JSON.stringify(cache.user));
+              setLoading(false);
+              shouldFetchSession = false;
+            }
+          } catch {
+            // Ignore parse errors, will fetch session
+          }
+        }
+      }
+
+      if (!shouldFetchSession) return;
+
+      // 3. Fetch backend session for SSO (auto-login)
+      try {
+        const apiBase = API_BASE_URL;
+        const response = await fetch(`${apiBase}/auth/session`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser(data.user);
+            if (data.accessToken && typeof window !== 'undefined') {
+              sessionStorage.setItem('accessToken', data.accessToken);
+            }
+            userStorage.setItem(JSON.stringify(data.user));
+            // Cache session result
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({
+                user: data.user,
+                accessToken: data.accessToken,
+                timestamp: Date.now(),
+              }));
+            }
+          } else {
+            setUser(null);
+            userStorage.removeItem();
+            if (typeof window !== 'undefined') {
+              sessionStorage.removeItem('accessToken');
+              sessionStorage.removeItem(SESSION_CACHE_KEY);
+            }
+          }
+        } else {
+          setUser(null);
+          userStorage.removeItem();
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('accessToken');
+            sessionStorage.removeItem(SESSION_CACHE_KEY);
+          }
+        }
+      } catch {
+        setUser(null);
+        userStorage.removeItem();
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('accessToken');
+          sessionStorage.removeItem(SESSION_CACHE_KEY);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkSession();
   }, []);
 
   // Authentication functions moved directly from api-client.ts
