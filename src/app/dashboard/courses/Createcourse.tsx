@@ -10,10 +10,10 @@ import { useRouter, usePathname } from "next/navigation";
 import CourseStructure from "./coursestructure/page";
 import CourseSettings from "./coursesettings/page";
 import CoursePrice from "./courseprice/page";
-import Seo from "./seo/page";
+import Seo from "./courseseo/page";
 import RecommendedCourses from "./recommendedcourses/page";
-import Patrons from "./patrons/page";
-import Logs from "./logs/page";
+import Patrons from "./coursepatrons/page";
+import Logs from "./courselogs/page";
 
 
 const tabList = [
@@ -30,12 +30,20 @@ export default function CreateCourse() {
   const pathname = usePathname();
   // Extract tab from path: /dashboard/courses/[tab]
   const pathSegments = pathname.split("/");
-  const tabSegment = pathSegments[pathSegments.length - 1] || "courseBuilder";
+  const tabSegment = pathSegments[pathSegments.length - 1] || "courseStructure";
   const [activeTab, setActiveTab] = useState(tabSegment);
+  const validTabs = ["courseStructure", "courseSettings", "coursePrice", "seo", "recommendedCourses", "patrons", "logs"];
 
   useEffect(() => {
-    setActiveTab(tabSegment);
-  }, [tabSegment]);
+    // Ensure we have a valid tab, default to courseStructure
+    const currentTab = validTabs.includes(tabSegment) ? tabSegment : "courseStructure";
+    setActiveTab(currentTab);
+    
+    // If current URL doesn't have a valid tab, redirect to courseStructure
+    if (!validTabs.includes(tabSegment) && pathname.includes('/dashboard/courses/')) {
+      router.replace('/dashboard/courses/courseStructure');
+    }
+  }, [tabSegment, pathname, router]);
 
   const handleTabChange = (value: string) => {
     router.push(`/dashboard/courses/${value}`);
