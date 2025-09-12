@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 // Import tab content components
-import CourseBuilder from "./coursebuilder/page";
+import CourseStructure from "./coursestructure/page";
 import CourseSettings from "./coursesettings/page";
 import CoursePrice from "./courseprice/page";
 import Seo from "./seo/page";
@@ -15,9 +15,12 @@ import RecommendedCourses from "./recommendedcourses/page";
 import Patrons from "./patrons/page";
 import Logs from "./logs/page";
 
+interface CreateCourseProps {
+  courseSlug?: string;
+}
 
 const tabList = [
-  { value: "courseBuilder", label: "Course Builder", Component: CourseBuilder, path: "courseBuilder" },
+  { value: "CourseStructure", label: "Course Structure", Component: CourseStructure, path: "courseStructure" },
   { value: "courseSettings", label: "Course Settings", Component: CourseSettings, path: "courseSettings" },
   { value: "coursePrice", label: "Course Price", Component: CoursePrice, path: "coursePrice" },
   { value: "seo", label: "SEO", Component: Seo, path: "seo" },
@@ -25,20 +28,33 @@ const tabList = [
   { value: "patrons", label: "Patrons", Component: Patrons, path: "patrons" },
   { value: "logs", label: "Logs", Component: Logs, path: "logs" },
 ];
-export default function CreateCourse() {
+
+export default function CreateCourse({ courseSlug }: CreateCourseProps) {
   const router = useRouter();
   const pathname = usePathname();
-  // Extract tab from path: /dashboard/courses/[tab]
+  
   const pathSegments = pathname.split("/");
-const tabSegment = pathSegments[pathSegments.length - 1] || "courseBuilder";
+  const tabSegment = pathSegments[pathSegments.length - 1] || "courseStructure";
   const [activeTab, setActiveTab] = useState(tabSegment);
+
+  // Convert slug back to readable title
+  const courseTitle = courseSlug 
+    ? courseSlug.split('-').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
+    : "New Course";
+    console.log("Course Title:", courseTitle);
 
   useEffect(() => {
     setActiveTab(tabSegment);
   }, [tabSegment]);
 
   const handleTabChange = (value: string) => {
-    router.push(`/dashboard/courses/${value}`);
+    if (courseSlug) {
+      router.push(`/dashboard/courses/courseStructure/${courseSlug}/${value}`);
+    } else {
+      router.push(`/dashboard/courses/${value}`);
+    }
     setActiveTab(value);
   };
 
@@ -46,9 +62,9 @@ const tabSegment = pathSegments[pathSegments.length - 1] || "courseBuilder";
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h1>Artificial Intelligence Based Cardiovascular</h1>
+          <h1>{courseTitle}</h1>
         </div>
-        <div className={styles.courseSectionButtons} >
+        <div className={styles.courseSectionButtons}>
           <Button variant='glass' title="Update the Kite ID"><RefreshCcw /></Button>
           <Button variant='glass' title="Preview on Desktop"><MonitorStop /></Button>
           <Button variant='glass' title="Preview on Mobile"><TabletSmartphone /></Button>

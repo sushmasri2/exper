@@ -6,6 +6,14 @@ import Link from "next/link";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Plus, Grid, List, ChevronDown } from "lucide-react";
 
+// Helper function to generate slug from course title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 export default function Courses() {
   const [view, setView] = useState("grid");
   const [selectedCourse, setSelectedCourse] = useState("Select Course");
@@ -17,6 +25,7 @@ export default function Courses() {
     { value: "accm", label: "Adavance Certificate in Critical Care Medicine" },
     { value: "mccm", label: "Master in Critical Care Medicine" },
   ];
+
   const sortBy = [
     { label: "Newest", value: "newest" },
     { label: "Oldest", value: "oldest" },
@@ -25,10 +34,32 @@ export default function Courses() {
   ];
 
   const coursesList = [
-    { id: 1, title: "Course 1", description: "Description for Course 1", link: "/dashboard/courses/courseBuilder" },
-    { id: 2, title: "Course 2", description: "Description for Course 2", link: "/dashboard/courses/courseBuilder" },
-    { id: 3, title: "Course 3", description: "Description for Course 3", link: "/dashboard/courses/courseBuilder" },
-  ]
+    { 
+      id: 1, 
+      title: "Artificial Intelligence Based Cardiovascular", 
+      description: "Advanced AI techniques for cardiovascular diagnosis",
+      slug: "artificial-intelligence-based-cardiovascular"
+    },
+    { 
+      id: 2, 
+      title: "Critical Care Medicine Fundamentals", 
+      description: "Essential concepts in critical care medicine",
+      slug: "critical-care-medicine-fundamentals"
+    },
+    { 
+      id: 3, 
+      title: "Emergency Medicine Protocols", 
+      description: "Standard protocols for emergency medicine",
+      slug: "emergency-medicine-protocols"
+    },
+  ];
+
+  // Function to create new course with generated slug
+  const handleCreateNewCourse = () => {
+    const newCourseTitle = "New Course " + Date.now(); // You can customize this
+    const courseSlug = generateSlug(newCourseTitle);
+    return `/dashboard/courses/courseStructure/${courseSlug}`;
+  };
 
   return (
     <div className="shadow-sm p-6 bg-white rounded-lg">
@@ -70,7 +101,7 @@ export default function Courses() {
           {/* Sort Dropdown - 30% of center area */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-[3]  gap-2 rounded-lg border-gray-300 text-left justify-between">
+              <Button variant="outline" className="flex-[3] gap-2 rounded-lg border-gray-300 text-left justify-between">
                 <span className="truncate">{sortByOption}</span>
                 <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
@@ -91,7 +122,7 @@ export default function Courses() {
         {/* Right: Create Button and View Toggle - Fixed width */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Create Button */}
-          <Link href="/dashboard/courses/courseBuilder">
+          <Link href="/dashboard/courses/courseStructure">
             <Button variant='courseCreate' className="whitespace-nowrap">
               <Plus size={16} /> Create New Course
             </Button>
@@ -122,7 +153,7 @@ export default function Courses() {
         {view === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {coursesList.map((course) => (
-              <Link href={course.link} key={course.id}>
+              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
                 <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
                   <h2 className="text-lg font-semibold">{course.title}</h2>
                   <p className="text-gray-500">{course.description}</p>
@@ -133,7 +164,7 @@ export default function Courses() {
         ) : (
           <div className="space-y-4">
             {coursesList.map((course) => (
-              <Link href={course.link} key={course.id}>
+              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
                 <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
                   <h2 className="text-lg font-semibold">{course.title}</h2>
                   <p className="text-gray-500">{course.description}</p>
