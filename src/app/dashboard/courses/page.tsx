@@ -273,7 +273,7 @@ export default function Courses() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredCourses.map((course) => (
               <Link
-                href={`/dashboard/courses/courseStructure/${course.slug}`}
+                href={`/dashboard/courses/courseStructure?id=${course.id}`}
                 key={course.id}
               >
                 <div className="relative bg-white border rounded-2xl shadow-md hover:shadow-lg transition p-6 flex flex-col gap-4">
