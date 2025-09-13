@@ -93,6 +93,9 @@ export function DashboardClient({
 
   const getPageTitle = () => {
     // For specific pages, return their exact titles
+    if (pathname.startsWith('/dashboard/courses/') && pathname !== '/dashboard/courses') {
+      return "Course";
+    }
     if (pathname === "/dashboard") return "Overview";
     if (pathname === "/dashboard/buildercourses") return "Courses Builder";
     if (pathname === "/dashboard/courses") return "Courses";
@@ -122,6 +125,16 @@ export function DashboardClient({
 
     // Add Dashboard as the root item
     breadcrumbItems.push({ label: "Dashboard", href: "/dashboard" });
+    // Handle all course tab routes - show "Course" for any course tab
+    if (pathname.startsWith('/dashboard/courses/') && pathname !== '/dashboard/courses') {
+      breadcrumbItems.push({ label: "Course" });
+      return (
+        <div className="mb-2">
+          <Breadcrumb items={breadcrumbItems} />
+          <h2 className={styles.pageTitle}>Course</h2>
+        </div>
+      );
+    }
 
     // Add other segments based on pathname
     const segments = pathname.split('/').filter(Boolean);

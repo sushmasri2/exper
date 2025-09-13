@@ -1,24 +1,33 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Plus, Grid, List, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Grid, List, ChevronDown, IndianRupee, DollarSign, Eye, Edit, Copy, Trash2, GraduationCap, BookOpen, Clock } from "lucide-react";
+import { count } from "console";
 
 // Helper function to generate slug from course title
 function generateSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 export default function Courses() {
   const [view, setView] = useState("grid");
-  const [selectedCourse, setSelectedCourse] = useState("Select Course");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCourseType, setSelectedCourseType] = useState("");
   const [sortByOption, setSortByOption] = useState("Newest");
-
+  const [isHovered, setIsHovered] = useState(false);
 
   const sortBy = [
     { label: "Newest", value: "newest" },
@@ -28,63 +37,155 @@ export default function Courses() {
   ];
 
   const coursesList = [
-    { 
-      id: 1, 
-      title: "Artificial Intelligence Based Cardiovascular", 
-      description: "Advanced AI techniques for cardiovascular diagnosis",
-      slug: "artificial-intelligence-based-cardiovascular"
+    {
+      id: 1,
+      title: "Fellowship in Critical Care Medicine",
+      coursecode: "FCCM",
+      description:
+        "The Fellowship in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
+      slug: "fellowship-in-critical-care-medicine",
+      category: "Critical Care",
+      coursetype: "Fellowship",
+      priceruppees: 50000,
+      pricedollars: 600,
+      duration: "6 months",
+      status: "active",
     },
-    { 
-      id: 2, 
-      title: "Critical Care Medicine Fundamentals", 
-      description: "Essential concepts in critical care medicine",
-      slug: "critical-care-medicine-fundamentals"
+    {
+      id: 2,
+      title: "Certificate in Critical Care Medicine",
+      coursecode: "CCCM",
+      description:
+        "The Certificate in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
+      slug: "certificate-in-critical-care-medicine",
+      category: "Critical Care",
+      coursetype: "Certificate",
+      priceruppees: 100000,
+      pricedollars: 1200,
+      duration: "3 months",
+      status: "inactive",
     },
-    { 
-      id: 3, 
-      title: "Emergency Medicine Protocols", 
-      description: "Standard protocols for emergency medicine",
-      slug: "emergency-medicine-protocols"
+    {
+      id: 3,
+      title: "Advance Certificate in Critical Care Medicine",
+      coursecode: "ACCCM",
+      description:
+        "The Advance Certificate in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
+      slug: "advance-certificate-in-critical-care-medicine",
+      category: "Critical Care",
+      coursetype: "Advance Certificate",
+      priceruppees: 25000,
+      pricedollars: 300,
+      duration: "4 months",
+      status: "active",
+    },
+    {
+      id: 4,
+      title: "Master in Critical Care Medicine",
+      coursecode: "MCCM",
+      description:
+        "The Master in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
+      slug: "master-in-critical-care-medicine",
+      category: "Critical Care",
+      coursetype: "Master",
+      priceruppees: 100000,
+      pricedollars: 1200,
+      duration: "1 year",
+      status: "inactive",
     },
   ];
 
-  // Function to create new course with generated slug
-  const handleCreateNewCourse = () => {
-    const newCourseTitle = "New Course " + Date.now(); // You can customize this
-    const courseSlug = generateSlug(newCourseTitle);
-    return `/dashboard/courses/courseStructure/${courseSlug}`;
+  // 🔹 Get unique categories & course types
+  const uniqueCategories = [...new Set(coursesList.map((c) => c.category))];
+  const uniqueCourseTypes = [...new Set(coursesList.map((c) => c.coursetype))];
+  const statusColor: Record<string, string> = {
+    active: "bg-green-100 text-green-800",
+    inactive: "bg-red-100 text-red-800",
   };
+
+  // 🔹 Derived courses based on filters & sorting
+  const filteredCourses = useMemo(() => {
+    let result = [...coursesList];
+
+    // Search filter
+    if (searchQuery) {
+      result = result.filter((c) =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Course filter
+    if (selectedCourse) {
+      result = result.filter((c) => c.slug === selectedCourse);
+    }
+
+    // Category filter
+    if (selectedCategory) {
+      result = result.filter((c) => c.category === selectedCategory);
+    }
+
+    // Course Type filter
+    if (selectedCourseType) {
+      result = result.filter((c) => c.coursetype === selectedCourseType);
+    }
+
+    // Sorting
+    if (sortByOption === "A-Z") {
+      result.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortByOption === "Z-A") {
+      result.sort((a, b) => b.title.localeCompare(a.title));
+    }
+
+    return result;
+  }, [searchQuery, selectedCourse, selectedCategory, selectedCourseType, sortByOption]);
 
   return (
     <div className="shadow-sm p-6 bg-white rounded-lg">
       {/* Header Row */}
       <div className="flex items-center justify-between gap-6 mb-6">
-        {/* Left: Title - Fixed width */}
+        {/* Title */}
         <div className="flex-shrink-0">
-          <h1 className="text-lg font-medium text-gray-900 whitespace-nowrap">All Courses(466)</h1>
+          <h1 className="text-lg font-medium text-gray-900 whitespace-nowrap">
+            All Courses ({filteredCourses.length})
+          </h1>
         </div>
 
-        {/* Center: Search and Filters - Flexible width */}
+        {/* Search & Filters */}
         <div className="flex items-center gap-4 flex-1 max-w-4xl">
-          {/* Search - 30% of center area */}
+          {/* Search */}
           <Input
             placeholder="Search courses..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-[3] rounded-full border-gray-300"
           />
 
-          {/* Filter Dropdown - 40% of center area */}
+          {/* Course Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between">
-                <span className="truncate">{selectedCourse}</span>
+              <Button
+                variant="outline"
+                className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
+              >
+                <span className="truncate">
+                  {selectedCourse
+                    ? coursesList.find((c) => c.slug === selectedCourse)?.title
+                    : "Select Course"}
+                </span>
                 <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
             </DropdownMenuTrigger>
+
             <DropdownMenuContent>
+              {/* Reset option */}
+              <DropdownMenuItem onClick={() => setSelectedCourse(null)}>
+                Select Course
+              </DropdownMenuItem>
+
               {coursesList.map((course) => (
                 <DropdownMenuItem
                   key={course.slug}
-                  onClick={() => setSelectedCourse(course.title)}
+                  onClick={() => setSelectedCourse(course.slug)}
                 >
                   {course.title}
                 </DropdownMenuItem>
@@ -92,10 +193,70 @@ export default function Courses() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Sort Dropdown - 30% of center area */}
+
+          {/* Category Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex-[3] gap-2 rounded-lg border-gray-300 text-left justify-between">
+              <Button
+                variant="outline"
+                className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
+              >
+                <span className="truncate">
+                  {selectedCategory === "" ? "Select Category" : selectedCategory}
+                </span>
+                <ChevronDown size={16} className="flex-shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSelectedCategory("")}>
+                Select Category
+              </DropdownMenuItem>
+              {uniqueCategories.map((category) => (
+                <DropdownMenuItem
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Course Type Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
+              >
+                <span className="truncate">
+                  {selectedCourseType === "" ? "Select Course Type" : selectedCourseType}
+                </span>
+                <ChevronDown size={16} className="flex-shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSelectedCourseType("")}>
+                Select Course Type
+              </DropdownMenuItem>
+              {uniqueCourseTypes.map((type) => (
+                <DropdownMenuItem
+                  key={type}
+                  onClick={() => setSelectedCourseType(type)}
+                >
+                  {type}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Sort Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex-[3] gap-2 rounded-lg border-gray-300 text-left justify-between"
+              >
                 <span className="truncate">{sortByOption}</span>
                 <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
@@ -113,16 +274,14 @@ export default function Courses() {
           </DropdownMenu>
         </div>
 
-        {/* Right: Create Button and View Toggle - Fixed width */}
+        {/* Create & View Toggle */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Create Button */}
           <Link href="/dashboard/courses/courseStructure">
-            <Button variant='courseCreate' className="whitespace-nowrap">
+            <Button variant="courseCreate" className="whitespace-nowrap">
               <Plus size={16} /> Create New Course
             </Button>
           </Link>
 
-          {/* View Toggle */}
           <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <Button
               variant={view === "grid" ? "courseCreate" : "default"}
@@ -144,21 +303,96 @@ export default function Courses() {
 
       {/* Course Content */}
       <div>
-        {view === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {coursesList.map((course) => (
-              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
-                <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
-                  <h2 className="text-lg font-semibold">{course.title}</h2>
-                  <p className="text-gray-500">{course.description}</p>
+        {filteredCourses.length === 0 ? (
+          <p className="text-gray-500">No courses found.</p>
+        ) : view === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredCourses.map((course) => (
+              <Link
+                href={`/dashboard/courses/courseStructure/${course.slug}`}
+                key={course.id}
+              >
+                <div className="relative bg-white border rounded-2xl shadow-md hover:shadow-lg transition p-6 flex flex-col gap-4">
+                  {/* Top Row */}
+                  <div className="flex justify-between items-start">
+                    {/* Left - Title + Code */}
+                    <div>
+                      <span className="inline-block bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full font-medium">
+                        {course.coursecode}
+                      </span>
+                      <h2 className="text-lg font-bold mt-2 leading-snug line-clamp-2 h-[3rem]">{course.title}</h2>
+                    </div>
+
+                    {/* Status + Actions */}
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-medium ${course.status === "inactive"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                          }`}
+                      >
+                        {course.status === "active" ? "Live" : "Draft"}
+                      </span>
+                      <div className="flex gap-2">
+                        <button className="p-2 bg-gray-100 hover:bg-blue-50 rounded-lg text-blue-600">
+                          <Eye size={18} />
+                        </button>
+                        <button className="p-2 bg-gray-100 hover:bg-green-50 rounded-lg text-green-600">
+                          <Edit size={18} />
+                        </button>
+                        <button className="p-2 bg-gray-100 hover:bg-red-50 rounded-lg text-red-600">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-gray-600 text-sm leading-relaxed">{course.description}</p>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2  gap-4">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
+                        <BookOpen size={16} /> Category
+                      </h4>
+                      <p className="text-gray-900">{course.category}</p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
+                        <GraduationCap size={20} /> Course Type
+                      </h4>
+                      <p className="text-gray-900">{course.coursetype}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
+                        <Clock size={16} /> Duration
+                      </h4>
+                      <p className="text-gray-900">{course.duration}</p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
+                        Price
+                      </h4>
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-xl font-bold text-gray-900 flex items-center"><IndianRupee size={16} />{course.priceruppees}</span>
+                        <span className="text-xl font-bold text-gray-900 flex items-center">/<DollarSign size={16} />{course.pricedollars}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </Link>
             ))}
           </div>
         ) : (
           <div className="space-y-4">
-            {coursesList.map((course) => (
-              <Link href={`/dashboard/courses/courseStructure/${course.slug}`} key={course.id}>
+            {filteredCourses.map((course) => (
+              <Link
+                href={`/dashboard/courses/courseStructure/${course.slug}`}
+                key={course.id}
+              >
                 <div className="border p-4 rounded-lg hover:shadow-md transition-shadow">
                   <h2 className="text-lg font-semibold">{course.title}</h2>
                   <p className="text-gray-500">{course.description}</p>
@@ -168,6 +402,6 @@ export default function Courses() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
