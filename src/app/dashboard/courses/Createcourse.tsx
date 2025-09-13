@@ -17,11 +17,11 @@ import Logs from "./courselogs";
 
 
 const tabList = [
-  { value: "courseStructure", label: "Course Structure", Component: CourseStructure, path: "courseStructure" },
-  { value: "courseSettings", label: "Course Settings", Component: CourseSettings, path: "courseSettings" },
-  { value: "coursePrice", label: "Course Price", Component: CoursePrice, path: "coursePrice" },
+  { value: "coursestructure", label: "Course Structure", Component: CourseStructure, path: "coursestructure" },
+  { value: "coursesettings", label: "Course Settings", Component: CourseSettings, path: "coursesettings" },
+  { value: "courseprice", label: "Course Price", Component: CoursePrice, path: "courseprice" },
   { value: "seo", label: "SEO", Component: Seo, path: "seo" },
-  { value: "recommendedCourses", label: "Recommended Courses", Component: RecommendedCourses, path: "recommendedCourses" },
+  { value: "recommendedcourses", label: "Recommended Courses", Component: RecommendedCourses, path: "recommendedcourses" },
   { value: "patrons", label: "Patrons", Component: Patrons, path: "patrons" },
   { value: "logs", label: "Logs", Component: Logs, path: "logs" },
 ];
@@ -32,7 +32,7 @@ export default function CreateCourse() {
   const pathSegments = pathname.split("/");
   const tabSegment = pathSegments[pathSegments.length - 1] || "courseStructure";
   const [activeTab, setActiveTab] = useState(tabSegment);
-  const validTabs = ["courseStructure", "courseSettings", "coursePrice", "seo", "recommendedCourses", "patrons", "logs"];
+  const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "recommendedcourses", "patrons", "logs"];
 
   useEffect(() => {
     // Ensure we have a valid tab, default to courseStructure
