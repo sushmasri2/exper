@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import CreateCourse from "../Createcourse";
+import CreateCourse from "../createcourse";
 
 export default function CourseTabPage() {
   const params = useParams();

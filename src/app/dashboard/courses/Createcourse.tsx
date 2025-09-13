@@ -7,13 +7,13 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 // Import tab content components
-import CourseStructure from "./coursestructure/page";
-import CourseSettings from "./coursesettings/page";
-import CoursePrice from "./courseprice/page";
-import Seo from "./courseseo/page";
-import RecommendedCourses from "./recommendedcourses/page";
-import Patrons from "./coursepatrons/page";
-import Logs from "./courselogs/page";
+import CourseStructure from "./coursestructure";
+import CourseSettings from "./coursesettings";
+import CoursePrice from "./courseprice";
+import Seo from "./courseseo";
+import RecommendedCourses from "./recommendedcourses";
+import Patrons from "./coursepatrons";
+import Logs from "./courselogs";
 
 
 const tabList = [
