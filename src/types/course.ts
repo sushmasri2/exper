@@ -1,11 +1,11 @@
 export interface Course {
   id: number;
-  title: string;
+  course_name: string;
   coursecode: string;
   description: string;
   slug: string;
   category: string;
-  coursetype: string;
+  course_type: string;
   priceruppees: number;
   pricedollars: number;
   duration: string;

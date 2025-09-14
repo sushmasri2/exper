@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import styles from './createcourse.module.css';
 import { Save, SquareArrowOutUpRight, MonitorStop, TabletSmartphone, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { Course } from "@/types/course";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 // Import tab content components
 import CourseStructure from "./coursestructure";
@@ -34,19 +36,57 @@ export default function CreateCourse() {
   const [activeTab, setActiveTab] = useState(tabSegment);
   const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "recommendedcourses", "patrons", "logs"];
 
+  const [courseData, setCourseData] = useState<Course | null>(null);
+  const searchParams = useSearchParams();
+  const courseId = searchParams.get('id');
+
+  
   useEffect(() => {
-    // Ensure we have a valid tab, default to courseStructure
-    const currentTab = validTabs.includes(tabSegment) ? tabSegment : "courseStructure";
+    const currentTab = validTabs.includes(tabSegment) ? tabSegment : "coursestructure";
     setActiveTab(currentTab);
-    
-    // If current URL doesn't have a valid tab, redirect to courseStructure
+
     if (!validTabs.includes(tabSegment) && pathname.includes('/dashboard/courses/')) {
-      router.replace('/dashboard/courses/courseStructure');
+      const redirectUrl = courseId
+        ? `/dashboard/courses/coursestructure?id=${courseId}`
+        : '/dashboard/courses/coursestructure';
+      router.replace(redirectUrl);
     }
-  }, [tabSegment, pathname, router]);
+  }, [tabSegment, pathname, router, courseId]);
+useEffect(() => {
+  if (!courseId) return;
+
+  async function fetchCourse() {
+    try {
+      const res = await fetch(`/api/courses/${courseId}`);
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch course');
+      }
+      
+      const response = await res.json();
+      
+      if (response.success && response.data) {
+
+        setCourseData(response.data);
+      } else {
+        console.error('API response structure issue:', response);
+        throw new Error(response.message || 'Course not found');
+      }
+    } catch (error) {
+      console.error('Error fetching course:', error);
+    }
+  }
+
+  fetchCourse();
+}, [courseId]);
+
+
 
   const handleTabChange = (value: string) => {
-    router.push(`/dashboard/courses/${value}`);
+    const newUrl = courseId
+      ? `/dashboard/courses/${value}?id=${courseId}`
+      : `/dashboard/courses/${value}`;
+    router.push(newUrl);
     setActiveTab(value);
   };
 
@@ -54,7 +94,7 @@ export default function CreateCourse() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h1>Artificial Intelligence Based Cardiovascular</h1>
+          <h1>{courseData?.course_name || "New Course"}</h1>
         </div>
         <div className={styles.courseSectionButtons} >
           <Button variant='glass' title="Update the Kite ID"><RefreshCcw /></Button>
