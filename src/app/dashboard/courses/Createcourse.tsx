@@ -40,7 +40,7 @@ export default function CreateCourse() {
   const searchParams = useSearchParams();
   const courseId = searchParams.get('id');
 
-  
+
   useEffect(() => {
     const currentTab = validTabs.includes(tabSegment) ? tabSegment : "coursestructure";
     setActiveTab(currentTab);
@@ -52,33 +52,33 @@ export default function CreateCourse() {
       router.replace(redirectUrl);
     }
   }, [tabSegment, pathname, router, courseId]);
-useEffect(() => {
-  if (!courseId) return;
+  useEffect(() => {
+    if (!courseId) return;
 
-  async function fetchCourse() {
-    try {
-      const res = await fetch(`/api/courses/${courseId}`);
-      
-      if (!res.ok) {
-        throw new Error('Failed to fetch course');
-      }
-      
-      const response = await res.json();
-      
-      if (response.success && response.data) {
+    async function fetchCourse() {
+      try {
+        const res = await fetch(`/api/courses/${courseId}`);
 
-        setCourseData(response.data);
-      } else {
-        console.error('API response structure issue:', response);
-        throw new Error(response.message || 'Course not found');
+        if (!res.ok) {
+          throw new Error('Failed to fetch course');
+        }
+
+        const response = await res.json();
+
+        if (response.success && response.data) {
+
+          setCourseData(response.data);
+        } else {
+          console.error('API response structure issue:', response);
+          throw new Error(response.message || 'Course not found');
+        }
+      } catch (error) {
+        console.error('Error fetching course:', error);
       }
-    } catch (error) {
-      console.error('Error fetching course:', error);
     }
-  }
 
-  fetchCourse();
-}, [courseId]);
+    fetchCourse();
+  }, [courseId]);
 
 
 

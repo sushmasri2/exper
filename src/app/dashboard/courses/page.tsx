@@ -143,14 +143,22 @@ export default function Courses() {
       last: `?page=${totalPages}`
     }
   };
-
+console.log({
+  totalCourses: filteredCourses.length,
+  itemsPerPage,
+  totalPages,
+  currentPage,
+  startIndex,
+  endIndex,
+  currentCoursesCount: currentCourses.length
+});
   const handlePageChange = (url: string, page: number) => {
     setCurrentPage(page);
   };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCourse, selectedCategory, selectedCourseType, sortByOption]);
+  }, [searchQuery, selectedCourse, selectedCategory, selectedCourseType, sortByOption, view]);
 
   const handleTableSort = (accessor: string, direction: 'asc' | 'desc') => {
     setTableSortConfig({ key: accessor, direction });
@@ -403,12 +411,7 @@ export default function Courses() {
                 </div>
               </Link>
             ))}
-            {totalPages > 1 && (
-              <Pagination
-                pagination={paginationData}
-                onPageChange={handlePageChange}
-              />
-            )}
+
           </div>
         ) : (
           <div className="space-y-4">
@@ -487,12 +490,15 @@ export default function Courses() {
               data={sortedCurrentCourses}
               onSort={handleTableSort}
             />
-            {totalPages > 1 && (
-              <Pagination
-                pagination={paginationData}
-                onPageChange={handlePageChange}
-              />
-            )}
+
+          </div>
+        )}
+        {totalPages > 1 && filteredCourses.length > 0 && (
+          <div className="mt-6">
+            <Pagination
+              pagination={paginationData}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
       </div>

@@ -58,7 +58,7 @@ export const coursesList: Course[] = [
         status: "inactive",
     },
     {
-        id: 1,
+        id: 5,
         course_name: "Fellowship in Critical Care Medicine",
         coursecode: "FCCM",
         description:
@@ -72,7 +72,7 @@ export const coursesList: Course[] = [
         status: "active",
     },
     {
-        id: 2,
+        id: 6,
         course_name: "Certificate in Critical Care Medicine",
         coursecode: "CCCM",
         description:
@@ -86,7 +86,7 @@ export const coursesList: Course[] = [
         status: "inactive",
     },
     {
-        id: 3,
+        id: 7,
         course_name: "Advance Certificate in Critical Care Medicine",
         coursecode: "ACCCM",
         description:
@@ -100,7 +100,7 @@ export const coursesList: Course[] = [
         status: "active",
     },
     {
-        id: 4,
+        id: 8,
         course_name: "Master in Critical Care Medicine",
         coursecode: "MCCM",
         description:
