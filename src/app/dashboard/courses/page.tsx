@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Grid, List, ChevronDown, IndianRupee, DollarSign, Eye, Edit, Copy, Trash2, GraduationCap, BookOpen, Clock } from "lucide-react";
-import { fetchCourses } from "@/lib/api/courses-api";
+import { getCourses } from "@/lib/courses-api";
 import { Course } from "@/types/course";
 import Pagination from "@/components/ui/pagination";
 import Table from "@/components/ui/table";
@@ -46,7 +46,7 @@ export default function Courses() {
   useEffect(() => {
     const loadCourses = async () => {
       try {
-        const courses = await fetchCourses();
+        const courses = await getCourses();
         setCoursesList(courses);
       } catch (error) {
         console.error('Failed to load courses:', error);
