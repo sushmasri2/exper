@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import styles from './createcourse.module.css';
 import { Save, SquareArrowOutUpRight, MonitorStop, TabletSmartphone, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams, useParams } from "next/navigation";
 import { Course } from "@/types/course";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 // Import tab content components
 import CourseStructure from "./coursestructure";
@@ -38,7 +37,8 @@ export default function CreateCourse() {
 
   const [courseData, setCourseData] = useState<Course | null>(null);
   const searchParams = useSearchParams();
-  const courseId = searchParams.get('id');
+  const params = useParams();
+  const courseId = (params?.id as string) || searchParams.get('id');
 
 
   useEffect(() => {
@@ -83,13 +83,16 @@ export default function CreateCourse() {
 
 
   const handleTabChange = (value: string) => {
-    const newUrl = courseId
-      ? `/dashboard/courses/${value}?id=${courseId}`
-      : `/dashboard/courses/${value}`;
+    let newUrl;
+    if (courseId) {
+      // Support both formats
+      newUrl = `/dashboard/courses/${value}?id=${courseId}`;
+    } else {
+      newUrl = `/dashboard/courses/${value}`;
+    }
     router.push(newUrl);
     setActiveTab(value);
   };
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>

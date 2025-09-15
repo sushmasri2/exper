@@ -3,11 +3,14 @@ import { fetchWithHeaders } from './api-client';
 
 export async function getCourses(): Promise<Course[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-    if (!baseUrl) {
-      throw new Error('API base URL is not defined');
-    }
-    const response = await fetchWithHeaders(`${baseUrl}/api/courses`, {
+    // const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+    // if (!baseUrl) {
+    //   throw new Error('API base URL is not defined');
+    // }
+    // const response = await fetchWithHeaders(`${baseUrl}/api/courses`, {
+    //   method: 'GET'
+    // });
+    const response = await fetchWithHeaders('/api/courses', {
       method: 'GET'
     });
 
