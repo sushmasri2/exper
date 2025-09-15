@@ -166,20 +166,18 @@ export async function fetchWithInterceptor(
   // Clone options to avoid modifying the original
   const requestOptions = { ...options };
 
-  // Ensure headers object exists
   requestOptions.headers = new Headers(requestOptions.headers || {});
-
-  // Add Platform header
   (requestOptions.headers as Headers).set('Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
+  (requestOptions.headers as Headers).set('Accept', 'application/json');
+  if (!requestOptions.headers.has('Content-Type')) {
+    (requestOptions.headers as Headers).set('Content-Type', 'application/json');
+  }
+  requestOptions.credentials = 'include'; // Important for sending cookies
 
-  // Check for token and handle preemptive refresh if needed
+  // Check if we have a token and if it needs refresh
   let token = authCookies.getAuthToken();
-
-  // If we have a token, check if it needs to be refreshed preemptively
   if (token && shouldRefreshToken(token)) {
     console.log('Token is approaching expiration, refreshing proactively...');
-
-    // If a refresh is already in progress, wait for it to complete
     if (isRefreshing) {
       try {
         token = await new Promise<string>((resolve) => {
@@ -189,19 +187,14 @@ export async function fetchWithInterceptor(
         });
       } catch (error) {
         console.error('Failed to get refreshed token:', error);
-        // Continue with the old token
       }
     } else {
-      // Start a new token refresh
       isRefreshing = true;
-
       try {
         token = await refreshAccessToken();
-        // Process all queued requests with the new token
         processQueue(token);
       } catch (error) {
         console.error('Proactive token refresh failed:', error);
-        // Continue with the old token or none if refresh removed it
         token = authCookies.getAuthToken();
       } finally {
         isRefreshing = false;
@@ -217,17 +210,11 @@ export async function fetchWithInterceptor(
   // Make the initial request
   const response = await fetch(url, requestOptions);  // If response is 401 (Unauthorized), try to refresh the token
   if (response.status === 401) {
-    // Check if we should attempt a token refresh
     const shouldRefresh = authCookies.hasAuthToken();
-
     if (!shouldRefresh) {
-      // No refresh token available, nothing we can do
       return response;
     }
-
     let newToken: string;
-
-    // If a refresh is already in progress, wait for it to complete
     if (isRefreshing) {
       try {
         newToken = await new Promise<string>((resolve) => {
@@ -236,32 +223,23 @@ export async function fetchWithInterceptor(
           });
         });
       } catch {
-        return response; // Return original 401 response if refresh fails
+        return response;
       }
     } else {
-      // Start a new token refresh
       isRefreshing = true;
 
       try {
         newToken = await refreshAccessToken();
-        // Process all queued requests with the new token
         processQueue(newToken);
       } catch {
-        // Refresh failed, reject all queued requests
         return response;
       } finally {
         isRefreshing = false;
       }
     }
-
-    // Update the Authorization header with the new token
     (requestOptions.headers as Headers).set('Authorization', `Bearer ${newToken}`);
-
-    // Retry the original request with the new token
     return fetch(url, requestOptions);
   }
-
-  // Return the response for successful requests or non-401 errors
   return response;
 }
 
@@ -271,15 +249,10 @@ export async function fetchWithInterceptor(
  */
 export async function checkAndRefreshToken(): Promise<boolean> {
   const token = authCookies.getAuthToken();
-
-  // If no token or no refresh token, nothing to do
   if (!token || !authCookies.hasAuthToken()) {
     return false;
   }
-
-  // Check if token needs refresh
   if (shouldRefreshToken(token)) {
-    // If a refresh is already in progress, wait for it to complete
     if (isRefreshing) {
       await new Promise<void>((resolve) => {
         refreshCallbackQueue.push(() => {
@@ -288,12 +261,9 @@ export async function checkAndRefreshToken(): Promise<boolean> {
       });
       return true;
     } else {
-      // Start a new token refresh
       isRefreshing = true;
-
       try {
         const newToken = await refreshAccessToken();
-        // Process all queued requests with the new token
         processQueue(newToken);
         return true;
       } catch (error) {

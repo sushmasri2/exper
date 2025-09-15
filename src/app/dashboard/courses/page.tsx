@@ -143,15 +143,6 @@ export default function Courses() {
       last: `?page=${totalPages}`
     }
   };
-console.log({
-  totalCourses: filteredCourses.length,
-  itemsPerPage,
-  totalPages,
-  currentPage,
-  startIndex,
-  endIndex,
-  currentCoursesCount: currentCourses.length
-});
   const handlePageChange = (url: string, page: number) => {
     setCurrentPage(page);
   };
