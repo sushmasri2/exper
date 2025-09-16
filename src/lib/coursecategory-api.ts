@@ -42,22 +42,22 @@
 //     throw new Error(`Courses API Error (${errorStatus}): ${errorMessage}`);
 //   }
 // }
-import { Course } from '@/types/course';
-import { coursesList } from '@/lib/data/courses-data';
+import { CourseCategory } from '@/types/coursecategory';
+import { CourseCategoryList } from '@/lib/data/category';
 
-export async function getCourses(): Promise<Course[]> {
+export async function getCourses(): Promise<CourseCategory[]> {
   // Simulate async operation
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(coursesList);
+      resolve(CourseCategoryList);
     }, 100);
   });
 }
 
-export async function getCourse(id: number): Promise<Course | null> {
+export async function getCourse(id: number): Promise<CourseCategory | null> {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const course = coursesList.find(c => c.id === id);
+      const course = CourseCategoryList.find(c => c.id === id);
       resolve(course || null);
     }, 100);
   });

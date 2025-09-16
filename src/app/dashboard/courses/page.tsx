@@ -9,19 +9,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Grid, List, ChevronDown, IndianRupee, DollarSign, Eye, Edit, Copy, Trash2, GraduationCap, BookOpen, Clock } from "lucide-react";
+import { Plus, Grid, List, ChevronDown, IndianRupee, DollarSign, Eye, Edit, Trash2, GraduationCap, BookOpen, Clock } from "lucide-react";
 import { getCourses } from "@/lib/courses-api";
 import { Course } from "@/types/course";
 import Pagination from "@/components/ui/pagination";
 import Table from "@/components/ui/table";
 
-// Helper function to generate slug from course title
-function generateSlug(course_name: string): string {
-  return course_name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+
 
 export default function Courses() {
   const [coursesList, setCoursesList] = useState<Course[]>([]);
@@ -112,16 +106,17 @@ export default function Courses() {
     if (!tableSortConfig) return currentCourses;
 
     return [...currentCourses].sort((a, b) => {
-      const aVal = (a as any)[tableSortConfig.key];
-      const bVal = (b as any)[tableSortConfig.key];
+      const key = tableSortConfig.key as keyof typeof a;
+      const aVal = a[key];
+      const bVal = b[key];
 
-      if (typeof aVal === 'string') {
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
         return tableSortConfig.direction === 'asc'
           ? aVal.localeCompare(bVal)
           : bVal.localeCompare(aVal);
       }
 
-      if (typeof aVal === 'number') {
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
         return tableSortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
       }
 
@@ -202,7 +197,7 @@ export default function Courses() {
               </DropdownMenuItem>
               {coursesList.map((course) => (
                 <DropdownMenuItem
-                  key={course.slug}
+                  key={`${course.id}-${course.slug}`}
                   onClick={() => setSelectedCourse(course.slug)}
                 >
                   {course.course_name}
@@ -416,7 +411,7 @@ export default function Courses() {
                     <Link
                       href={`/dashboard/courses/coursestructure?id=${row.id}`}
                     >
-                      {value}
+                      {String(value)}
                     </Link>
                   )
                 },
@@ -453,7 +448,7 @@ export default function Courses() {
                   header: "Status",
                   accessor: "status",
                   render: (value) => (
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColor[value]}`}>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColor[String(value)]}`}>
                       {value === "active" ? "Live" : "Draft"}
                     </span>
                   )
@@ -461,7 +456,7 @@ export default function Courses() {
                 {
                   header: "Actions",
                   accessor: "actions",
-                  render: (value, row, index) => (
+                  render: (value, row) => (
                     <div className="flex gap-2">
                       <Button className="p-2 bg-gray-100 hover:bg-blue-50 rounded-lg text-blue-600">
                         <Eye size={18} />

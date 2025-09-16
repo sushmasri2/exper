@@ -1,21 +1,35 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Course } from "@/types/course";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+interface CourseSettingsProps {
+    courseData?: Course | null;
+}
 
-export default function CourseSettings() {
-    const searchParams = useSearchParams();
-    const courseId = searchParams.get('id');
-    const [courseData, setCourseData] = useState<Course | null>(null);
 
+export default function CourseSettings({ courseData }: CourseSettingsProps) {
+
+    const [selectedCourseType, setSelectedCourseType] = useState("");
+
+    // Removed unused courseId and courseDataState
     const allItemIds = ["basic-course-information", "item-2", "item-3"]
 
     const [openItems, setOpenItems] = useState<string[]>([])
+    // Initialize form data with courseData and update when courseData changes
+    const [formData, setFormData] = useState<Partial<Course>>({
+        ...courseData
+    })
+
+    // Update formData when courseData changes
+    useEffect(() => {
+        if (courseData) {
+            setFormData(courseData);
+        }
+    }, [courseData]);
 
     const toggleAll = () => {
         if (openItems.length === allItemIds.length) {
@@ -24,33 +38,7 @@ export default function CourseSettings() {
             setOpenItems(allItemIds) // expand all
         }
     }
-    useEffect(() => {
-        if (!courseId) return;
-
-        async function fetchCourse() {
-            try {
-                const res = await fetch(`/api/courses/${courseId}`);
-
-                if (!res.ok) {
-                    throw new Error('Failed to fetch course');
-                }
-
-                const response = await res.json();
-
-                if (response.success && response.data) {
-
-                    setCourseData(response.data);
-                } else {
-                    console.error('API response structure issue:', response);
-                    throw new Error(response.message || 'Course not found');
-                }
-            } catch (error) {
-                console.error('Error fetching course:', error);
-            }
-        }
-
-        fetchCourse();
-    }, [courseId]);
+    // Removed unused effect for courseDataState
 
     return <div>
         <div className="flex gap-2 mb-4 justify-end">
@@ -73,8 +61,17 @@ export default function CourseSettings() {
                     <label className="text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 m-2">
                         Course Card Title
                     </label>
-                    <Input type="text" placeholder="Course Title" className="mt-1 mb-2" value={courseData?.course_name || ''} />
-                    <div className="gid grid-cols-2 gap-4">
+                    <Input
+                        type="text"
+                        placeholder="Course Title"
+                        className="mt-1 mb-2"
+                        value={formData?.course_name || courseData?.course_name || ''}
+                        onChange={(e) => setFormData({
+                            ...formData,
+                            course_name: e.target.value
+                        })}
+                    />
+                    <div className="flex gap-4">
                         <div>
                             <label className="text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 m-2">
                                 Course Type
@@ -86,25 +83,22 @@ export default function CourseSettings() {
                                         className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
                                     >
                                         <span className="truncate">
-                                            Select Course
+                                            {selectedCourseType === "" ? "Select Course Type" : courseData?.course_type}
                                         </span>
                                         <ChevronDown size={16} className="flex-shrink-0" />
                                     </Button>
                                 </DropdownMenuTrigger>
-
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem>
-                                        Select Course
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        Select Course
+                                    <DropdownMenuItem onClick={() => setSelectedCourseType("")}>
+                                        Select Course Type
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
+
                         </div>
                         <div>
                             <label className="text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 m-2">
-                                Course Type
+                                Child Courses
                             </label>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -113,21 +107,18 @@ export default function CourseSettings() {
                                         className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
                                     >
                                         <span className="truncate">
-                                            Select Course
+                                            {selectedCourseType === "" ? "Select Course Type" : courseData?.course_type}
                                         </span>
                                         <ChevronDown size={16} className="flex-shrink-0" />
                                     </Button>
                                 </DropdownMenuTrigger>
-
                                 <DropdownMenuContent>
-                                    <DropdownMenuItem>
-                                        Select Course
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        Select Course
+                                    <DropdownMenuItem onClick={() => setSelectedCourseType("")}>
+                                        Select Course Type
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
+
                         </div>
                     </div>
                 </AccordionContent>

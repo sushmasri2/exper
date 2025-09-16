@@ -203,7 +203,6 @@
 
 .formGroup {
   margin-bottom: 25px;
-  min-height: 135px;
 }
 
 .formLabel {
@@ -607,4 +606,110 @@
   100% {
     transform: rotate(360deg);
   }
+}
+.loginModeToggle {
+  display: flex;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  padding: 4px;
+  gap: 4px;
+}
+
+:global(.dark) .loginModeToggle {
+  background: #374151;
+}
+
+.modeButton {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: #6b7280;
+}
+
+:global(.dark) .modeButton {
+  color: #9ca3af;
+}
+
+.modeActive {
+  background: white !important;
+  color: #667eea !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:global(.dark) .modeActive {
+  background: #1f2937 !important;
+  color: #818cf8 !important;
+}
+
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: #6b7280;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: color 0.3s ease;
+}
+
+:global(.dark) .passwordToggle {
+  color: #9ca3af;
+}
+
+.passwordToggle:hover {
+  color: #667eea;
+}
+
+:global(.dark) .passwordToggle:hover {
+  color: #818cf8;
+}
+
+.passwordToggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputHint {
+  color: #10b981;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.inputHintError {
+  color: #ef4444;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+:global(.dark) .inputHint {
+  color: #34d399;
+}
+
+:global(.dark) .inputHintError {
+  color: #f87171;
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AuthResponse } from '@/lib/api-client';
 import { showToast } from '@/lib/toast';
 import { authCookies } from '@/lib/cookie-utils';
+import { detectInputType } from '@/lib/input-validator';
 
 // Base API URL for Medvarsity API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -32,6 +33,7 @@ interface AuthContextType {
   sendMobileOTP: (mobile: string) => Promise<{ success: boolean; message: string }>;
   verifyEmailOTP: (email: string, otp: string) => Promise<AuthResponse | { success: false, message: string }>;
   verifyMobileOTP: (mobile: string, otp: string) => Promise<AuthResponse | { success: false, message: string }>;
+  loginWithPassword: (identifier: string, password: string) => Promise<AuthResponse | { success: false, message: string }>;
   googleLogin: (credential: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   refreshToken: (force?: boolean) => Promise<string | null>;
@@ -642,6 +644,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   };
+  /**
+ * Login with password (email or mobile + password)
+ */
+const loginWithPassword = async (identifier: string, password: string): Promise<AuthResponse | { success: false, message: string }> => {
+  setLoading(true);
+  try {
+    const { fetchWithInterceptor } = await import('@/lib/api-interceptor');
+    
+    // Detect if identifier is email or mobile
+    const detection = detectInputType(identifier);
+    if (detection.type === 'invalid') {
+      setLoading(false);
+      return {
+        success: false,
+        message: 'Please enter a valid email or mobile number'
+      };
+    }
+
+    const body = detection.type === 'email' 
+      ? { email: detection.formatted, password }
+      : { mobile: detection.formatted, password };
+
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/api/user/login-with-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(body),
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = data?.message || data?.detail || `Login failed (${response.status})`;
+      setLoading(false);
+      showToast(errorMessage, 'error');
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    }
+
+    showToast('Login successful', 'success');
+    const authResponse = {
+      accessToken: data.accessToken || data.token || data.access_token,
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        mobile: data.user.mobile,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        avatar: data.user.avatar,
+        isGoogleAuth: data.user.isGoogleAuth,
+        lastLogin: data.user.lastLogin,
+        roles: data.user.roles,
+        permissions: data.user.permissions,
+        token: data.accessToken || data.token || data.access_token,
+      }
+    };
+
+    if (authResponse.accessToken) {
+      authCookies.setAuthToken(authResponse.accessToken);
+      console.log(`Set ${authCookies.getAuthCookieName()} cookie for password login`);
+    }
+
+    setUser(authResponse.user);
+    userStorage.setItem(JSON.stringify(authResponse.user));
+    setLoading(false);
+    router.push('/dashboard');
+    return authResponse;
+  } catch (error) {
+    setLoading(false);
+    console.error('Error logging in with password:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Password login failed';
+    showToast(errorMessage, 'error');
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
+};
 
   const value = {
     user,
@@ -653,6 +738,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     googleLogin,
     logout,
     refreshToken,
+    loginWithPassword,
     loading,
   };
 

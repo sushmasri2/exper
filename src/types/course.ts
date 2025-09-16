@@ -10,4 +10,5 @@ export interface Course {
   pricedollars: number;
   duration: string;
   status: 'active' | 'inactive';
+  [key: string]: unknown; // Add index signature to satisfy Record<string, unknown>
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, ReactNode } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 // TypeScript interfaces
@@ -8,7 +8,7 @@ interface TableColumn<T> {
   header: string;
   accessor: keyof T | string;
   sortable?: boolean;
-  render?: (value: any, row: T, index: number) => React.ReactNode;
+  render?: (value: unknown, row: T, index: number) => React.ReactNode;
   className?: string;
   width?: string;
 }
@@ -27,7 +27,9 @@ type SortConfig = {
   direction: 'asc' | 'desc';
 } | null;
 
-const Table = <T extends Record<string, any>>({
+// We're using Record<string, unknown> directly, so we don't need the TableRecord interface
+
+const Table = <T extends Record<string, unknown>>({
   columns,
   data,
   loading = false,
@@ -39,12 +41,12 @@ const Table = <T extends Record<string, any>>({
 
   const handleSort = (accessor: string) => {
     if (!onSort) return;
-    
+
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig?.key === accessor && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
-    
+
     setSortConfig({ key: accessor, direction });
     onSort(accessor, direction);
   };
@@ -53,16 +55,39 @@ const Table = <T extends Record<string, any>>({
     if (sortConfig?.key !== accessor) {
       return <ChevronUp className="w-4 h-4 opacity-30" />;
     }
-    return sortConfig.direction === 'asc' 
+    return sortConfig.direction === 'asc'
       ? <ChevronUp className="w-4 h-4" />
       : <ChevronDown className="w-4 h-4" />;
   };
 
-  const renderCell = (column: TableColumn<T>, row: T, index: number) => {
+  const renderCell = (column: TableColumn<T>, row: T, index: number): ReactNode => {
     if (column.render) {
       return column.render(row[column.accessor as keyof T], row, index);
     }
-    return row[column.accessor as keyof T];
+
+    const value = row[column.accessor as keyof T];
+
+    // Convert value to safe ReactNode
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    // Handle primitive types that can be converted to string safely
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
+      return String(value);
+    }
+
+    // For other types, try to convert to string or return a placeholder
+    try {
+      return JSON.stringify(value);
+    } catch {
+      // Ignore the error and return a placeholder
+      return '[Complex Value]';
+    }
   };
 
   if (loading) {
@@ -119,7 +144,7 @@ const Table = <T extends Record<string, any>>({
             {data.length > 0 ? (
               data.map((row, index) => (
                 <tr
-                  key={row.id || index}
+                  key={String(row.id ?? index)}
                   className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   {columns.map((column) => (
@@ -152,7 +177,7 @@ const Table = <T extends Record<string, any>>({
           {data.length > 0 ? (
             data.map((row, index) => (
               <div
-                key={row.id || index}
+                key={String(row.id ?? index)}
                 className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4"
               >
                 {columns.map((column) => {
@@ -163,7 +188,7 @@ const Table = <T extends Record<string, any>>({
                       </div>
                     );
                   }
-                  
+
                   return (
                     <div key={String(column.accessor)} className="flex justify-between items-start py-2 first:pt-0 last:pb-0">
                       <span className="font-medium text-gray-500 dark:text-gray-400 text-sm">

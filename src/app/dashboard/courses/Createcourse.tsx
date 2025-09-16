@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import styles from './createcourse.module.css';
 import { Save, SquareArrowOutUpRight, MonitorStop, TabletSmartphone, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname, useSearchParams, useParams } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Course } from "@/types/course";
+import { getCourses } from "@/lib/courses-api"; // Add this import
 
 // Import tab content components
 import CourseStructure from "./coursestructure";
@@ -16,7 +17,6 @@ import RecommendedCourses from "./recommendedcourses";
 import Patrons from "./coursepatrons";
 import Logs from "./courselogs";
 
-
 const tabList = [
   { value: "coursestructure", label: "Course Structure", Component: CourseStructure, path: "coursestructure" },
   { value: "coursesettings", label: "Course Settings", Component: CourseSettings, path: "coursesettings" },
@@ -26,6 +26,8 @@ const tabList = [
   { value: "patrons", label: "Patrons", Component: Patrons, path: "patrons" },
   { value: "logs", label: "Logs", Component: Logs, path: "logs" },
 ];
+const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "recommendedcourses", "patrons", "logs"];
+
 export default function CreateCourse() {
   const router = useRouter();
   const pathname = usePathname();
@@ -33,17 +35,13 @@ export default function CreateCourse() {
   const pathSegments = pathname.split("/");
   const tabSegment = pathSegments[pathSegments.length - 1] || "courseStructure";
   const [activeTab, setActiveTab] = useState(tabSegment);
-  const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "recommendedcourses", "patrons", "logs"];
 
   const [courseData, setCourseData] = useState<Course | null>(null);
   const searchParams = useSearchParams();
-  const params = useParams();
-  const courseId = (params?.id as string) || searchParams.get('id');
-
+  const courseId = Number(searchParams.get("id") ?? 0);
 
   useEffect(() => {
-    const currentTab = validTabs.includes(tabSegment) ? tabSegment : "coursestructure";
-    setActiveTab(currentTab);
+    setActiveTab(tabSegment);
 
     if (!validTabs.includes(tabSegment) && pathname.includes('/dashboard/courses/')) {
       const redirectUrl = courseId
@@ -51,37 +49,20 @@ export default function CreateCourse() {
         : '/dashboard/courses/coursestructure';
       router.replace(redirectUrl);
     }
+    // validTabs is defined outside the component and doesn't change, so it can be safely omitted
   }, [tabSegment, pathname, router, courseId]);
+
   useEffect(() => {
     if (!courseId) return;
-
-    async function fetchCourse() {
-      try {
-        const res = await fetch(`/api/courses/${courseId}`);
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch course');
-        }
-
-        const response = await res.json();
-
-        if (response.success && response.data) {
-
-          setCourseData(response.data);
-        } else {
-          console.error('API response structure issue:', response);
-          throw new Error(response.message || 'Course not found');
-        }
-      } catch (error) {
-        console.error('Error fetching course:', error);
-      }
-    }
-
-    fetchCourse();
+    getCourses()
+      .then(courses => {
+        const course = courses.find(c => c.id === courseId) || null;
+        setCourseData(course);
+      })
+      .catch(error => {
+        console.error("Error fetching courses:", error);
+      });
   }, [courseId]);
-
-
-
   const handleTabChange = (value: string) => {
     let newUrl;
     if (courseId) {
@@ -93,6 +74,11 @@ export default function CreateCourse() {
     router.push(newUrl);
     setActiveTab(value);
   };
+
+  // if (loading) {
+  //   return <div>Loading course data...</div>;
+  // }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -117,7 +103,7 @@ export default function CreateCourse() {
           {tabList.map(tab => (
             <TabsContent key={tab.value} value={tab.value}>
               <div className={styles.tabContent}>
-                <tab.Component />
+                <tab.Component courseData={courseData} />
               </div>
             </TabsContent>
           ))}

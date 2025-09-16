@@ -22,26 +22,27 @@ AccordionItem.displayName = "AccordionItem"
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <AccordionPrimitive.Header className="flex">
-    <AccordionPrimitive.Trigger
-      ref={ref}
-      className={cn(
-        "group flex flex-1 items-center justify-between py-4 text-lg font-medium transition-all",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <span className="ml-2">
-        {/* Closed state */}
-        <ChevronRight className="h-4 w-4 group-data-[state=open]:hidden" />
-        {/* Open state */}
-        <ChevronUp className="h-4 w-4 hidden group-data-[state=open]:block" />
-      </span>
-    </AccordionPrimitive.Trigger>
-  </AccordionPrimitive.Header>
-))
+>(( { className, children, ...props }, ref) => (
+    <AccordionPrimitive.Header className="flex">
+      <AccordionPrimitive.Trigger
+        ref={ref}
+        className={cn(
+          "group flex flex-1 items-center justify-between py-4 text-lg font-medium transition-all",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <span className="ml-2">
+          {/* Closed state */}
+          <ChevronRight className="h-4 w-4 group-data-[state=open]:hidden" />
+          {/* Open state */}
+          <ChevronUp className="h-4 w-4 hidden group-data-[state=open]:block" />
+        </span>
+      </AccordionPrimitive.Trigger>
+    </AccordionPrimitive.Header>
+  ))
+AccordionTrigger.displayName = "AccordionTrigger"
 
 
 const AccordionContent = React.forwardRef<

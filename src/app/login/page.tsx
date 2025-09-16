@@ -21,7 +21,7 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-  const { sendEmailOTP, sendMobileOTP, verifyEmailOTP, verifyMobileOTP } = useAuth();
+  const { sendEmailOTP, sendMobileOTP, verifyEmailOTP, verifyMobileOTP, loginWithPassword } = useAuth();
 
   // Form states
   const [identifier, setIdentifier] = useState(''); // Single input for email or mobile
@@ -30,7 +30,10 @@ function LoginContent() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in useEffect
   const [formattedValue, setFormattedValue] = useState(''); // Used internally for formatting
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-
+  // Login mode and password states
+  const [loginMode, setLoginMode] = useState<'otp' | 'password'>('otp');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   // UI states
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -270,10 +273,49 @@ function LoginContent() {
       setIsLoading(false);
     }
   };
+  const handlePasswordLogin = async () => {
+    if (!identifier.trim()) {
+      showToast('Please enter your email or mobile number', 'warning');
+      identifierInputRef.current?.focus();
+      return;
+    }
+
+    if (!password.trim()) {
+      showToast('Please enter your password', 'warning');
+      return;
+    }
+
+    const detection = detectInputType(identifier);
+    if (detection.type === 'invalid') {
+      showToast('Please enter a valid email or mobile number', 'warning');
+      identifierInputRef.current?.focus();
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await loginWithPassword(identifier, password);
+      if (!('success' in result) || result.success !== false) {
+        // Success - redirect will happen automatically via auth context
+      } else {
+        // Reset password field on error
+        setPassword('');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      showToast(errorMessage, 'error');
+      setPassword('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      if (!otpSent) {
+      if (loginMode === 'password') {
+        handlePasswordLogin();
+      } else if (!otpSent) {
         handleSendOTP();
       } else {
         handleVerifyOTP();
@@ -318,16 +360,90 @@ function LoginContent() {
 
   return (
     <>
+      {/* Header */}
       <div className={styles.loginHeader}>
         <h2>Welcome Back</h2>
         <p>Sign in to access your MedAI Content dashboard</p>
       </div>
 
+      {/* Login Mode Toggle */}
+      <div className={styles.loginModeToggle}>
+        <button
+          type="button"
+          className={`${styles.modeButton} ${loginMode === 'otp' ? styles.modeActive : ''}`}
+          onClick={() => {
+            setLoginMode('otp');
+            resetForm();
+            setPassword('');
+          }}
+        >
+          Login with OTP
+        </button>
+        <button
+          type="button"
+          className={`${styles.modeButton} ${loginMode === 'password' ? styles.modeActive : ''}`}
+          onClick={() => {
+            setLoginMode('password');
+            resetForm();
+            setPassword('');
+          }}
+        >
+          Login with Password
+        </button>
+      </div>
+
       {/* Smart Input Field */}
+      {!otpSent && (
+        <div className={styles.formGroup}>
+          <label htmlFor="identifier" className={styles.formLabel}>
+            Email or Mobile Number
+          </label>
+          <input
+            type="text"
+            id="identifier"
+            className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''
+              }`}
+            placeholder="Enter email or mobile number"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            onKeyPress={handleKeyPress}
+            ref={identifierInputRef}
+            disabled={isLoading}
+            required
+          />
+          {loginMode === 'otp' && <p className="mt-5">{getInputTypeHint()}</p>}
+        </div>
+      )}
 
-
-      {/* OTP Input (shown after OTP is sent) */}
-      {otpSent ? (
+      {/* Password Input (shown only in password mode) */}
+      {loginMode === 'password' && !otpSent ? (
+        <div className={styles.formGroup}>
+          <label htmlFor="password" className={styles.formLabel}>
+            Password
+          </label>
+          <div className={styles.passwordWrapper}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              className={styles.formInput}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isLoading}
+              required
+            />
+            <button
+              type="button"
+              className={styles.passwordToggle}
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={isLoading}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
+        </div>
+      ) : loginMode === 'otp' && otpSent ? (
         <div className={styles.formGroup}>
           <label htmlFor="otp" className={styles.formLabel}>
             Enter OTP sent to {getMaskedDisplay()}
@@ -341,7 +457,7 @@ function LoginContent() {
                 className={styles.otpInput}
                 value={digit}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                  const value = e.target.value.replace(/\D/g, ''); // digits only
                   handleOtpChange(index, value);
                 }}
                 onKeyDown={(e) => handleKeyDown(index, e)}
@@ -372,26 +488,12 @@ function LoginContent() {
             </button>
           </div>
         </div>
-      ) : (
-        <div className={styles.formGroup}>
-          <label htmlFor="identifier" className={styles.formLabel}>
-            Email or Mobile Number
-          </label>
-          <input
-            type="text"
-            id="identifier"
-            className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
-            placeholder='Enter email or mobile number'
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            onKeyPress={handleKeyPress}
-            ref={identifierInputRef}
-            disabled={otpSent || isLoading}
-            required
-          />
-          <p className='mt-5'>{getInputTypeHint()}</p>
-        </div>)}
+      ) : null}
 
+      {/* OTP Input (shown only after OTP is sent) */}
+
+
+      {/* Remember Me Checkbox */}
       <div className={styles.formCheckbox}>
         <input
           type="checkbox"
@@ -406,13 +508,23 @@ function LoginContent() {
       </div>
 
       {/* Action Button */}
-      {!otpSent ? (
+      {loginMode === 'password' ? (
+        <button
+          type="button"
+          className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''}`}
+          onClick={handlePasswordLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Signing in...' : 'Sign In'}
+        </button>
+      ) : !otpSent ? (
         <button
           type="button"
           className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''}`}
           onClick={handleSendOTP}
+          disabled={isLoading}
         >
-          {isLoading ? 'Sending OTP...' : `Send OTP`}
+          {isLoading ? 'Sending OTP...' : 'Send OTP'}
         </button>
       ) : (
         <button
@@ -425,32 +537,30 @@ function LoginContent() {
         </button>
       )}
 
+      {/* Divider */}
       <div className={styles.divider}>
         <span>OR</span>
       </div>
 
-      {/* <a href="#" className={styles.socialLogin} onClick={(e) => {
-        e.preventDefault();
-        showToast('Google login is not available. Please use OTP login.', 'info');
-      }}>
-        <div className={styles.googleIcon}></div>
-        Continue with Google
-      </a> */}
-
+      {/* Google Login */}
       <GoogleLogin
         disabled={isLoading}
         onSuccess={() => {
-          // Optional: additional success handling
+          // Optional: handle success
         }}
         onError={(errorMsg) => {
-          // Optional: additional error handling using errorMsg
           console.error('Google login error:', errorMsg);
         }}
       />
 
+      {/* Footer */}
       <div className={styles.poweredBy}>
-        Powered by <a href="https://medvarsity.com" target="_blank">Medvarsity</a>
+        Powered by{' '}
+        <a href="https://medvarsity.com" target="_blank">
+          Medvarsity
+        </a>
       </div>
     </>
   );
+
 }

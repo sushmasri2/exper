@@ -59,11 +59,11 @@ export const coursesList: Course[] = [
     },
     {
         id: 5,
-        course_name: "Fellowship in Critical Care Medicine",
-        coursecode: "FCCM",
+        course_name: "Fellowship in Critical Care Medicine (Advanced)",
+        coursecode: "FCCMA",
         description:
-            "The Fellowship in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
-        slug: "fellowship-in-critical-care-medicine",
+            "The Advanced Fellowship in Critical Care Medicine is your gateway to mastering the complexities of critical care and leading the charge in life-saving treatments.",
+        slug: "fellowship-in-critical-care-medicine-advanced",
         category: "Critical Care",
         course_type: "Fellowship",
         priceruppees: 50000,
