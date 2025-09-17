@@ -1,64 +1,57 @@
-// import { Course } from '@/types/course';
-// import { fetchWithHeaders } from './api-client';
+import { Course } from "@/types/course";
+import { fetchWithHeaders } from './api-client';
 
-// export async function getCourses(): Promise<Course[]> {
-//   try {
-//     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
-//     if (!baseUrl) {
-//       throw new Error('API base URL is not defined');
-//     }
-//     const response = await fetchWithHeaders(`${baseUrl}/api/courses`, {
-//       method: 'GET'
-//     });
-
-//     if (!response.ok) {
-//       throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
-//     }
-
-//     const result = await response.json();
-
-//     if (!result.success) {
-//       throw new Error(result.message || 'Unknown API error');
-//     }
-
-//     return result.data;
-//   } catch (error) {
-//     console.error('Error fetching courses:', error);
-
-//     let errorStatus = 500;
-//     let errorMessage = 'Failed to fetch courses';
-
-//     if (error instanceof Error) {
-//       errorMessage = error.message;
-//       if ('status' in error && typeof error.status === 'number') {
-//         errorStatus = error.status;
-//       } else if (error.message.includes('HTTP error')) {
-//         const matches = error.message.match(/HTTP error (\d+)/);
-//         if (matches && matches[1]) {
-//           errorStatus = parseInt(matches[1], 10);
-//         }
-//       }
-//     }
-//     throw new Error(`Courses API Error (${errorStatus}): ${errorMessage}`);
-//   }
-// }
-import { Course } from '@/types/course';
-import { coursesList } from '@/lib/data/courses-data';
 
 export async function getCourses(): Promise<Course[]> {
-  // Simulate async operation
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(coursesList);
-    }, 100);
-  });
-}
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
+    
+    if (!baseUrl) {
+      throw new Error('API base URL is not defined');
+    }
 
-export async function getCourse(id: number): Promise<Course | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const course = coursesList.find(c => c.id === id);
-      resolve(course || null);
-    }, 100);
-  });
+    const fullUrl = `${baseUrl}/api/courses`;
+
+    // Try without interceptor first - use plain fetch
+    const response = await fetchWithHeaders(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      // Remove credentials if not needed
+    });
+
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('Error Response:', errorText);
+      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+
+    // Check if response has the expected structure
+    if (result.success !== undefined && !result.success) {
+      throw new Error(result.message || 'Unknown API error');
+    }
+
+    // Handle different response structures
+    if (result.data) {
+      return result.data;
+    } else if (Array.isArray(result)) {
+      return result;
+    } else {
+      throw new Error('Unexpected response structure');
+    }
+
+  } catch (error) {
+    console.error('Error fetching course type:', error);
+
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to the API');
+    }
+
+    throw error;
+  }
 }

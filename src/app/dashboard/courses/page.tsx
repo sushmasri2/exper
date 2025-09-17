@@ -35,7 +35,6 @@ export default function Courses() {
   const [courseCategoryList, setCourseCategoryList] = useState<CourseCategory[]>([]);
   const [courseTypeList, setCourseTypeList] = useState<CourseType[]>([]);
 
-
   const sortBy = [
     { label: "Newest", value: "newest" },
     { label: "Oldest", value: "oldest" },
@@ -101,12 +100,12 @@ export default function Courses() {
 
     // Course filter
     if (selectedCourse) {
-      result = result.filter((c) => c.slug === selectedCourse);
+      result = result.filter((c) => c.seo_url === selectedCourse);
     }
 
     // Category filter
     if (selectedCategory) {
-      result = result.filter((c) => c.category === selectedCategory);
+      result = result.filter((c) => c.category_id.toString() === selectedCategory);
     }
 
     // Course Type filter
@@ -212,7 +211,7 @@ export default function Courses() {
               >
                 <span className="truncate">
                   {selectedCourse
-                    ? coursesList.find((c) => c.slug === selectedCourse)?.course_name
+                    ? coursesList.find((c) => c.seo_url === selectedCourse)?.course_name
                     : "Select Course"}
                 </span>
                 <ChevronDown size={16} className="flex-shrink-0" />
@@ -225,7 +224,7 @@ export default function Courses() {
               </DropdownMenuItem>
               {coursesList.map((course) => (
                 <DropdownMenuItem
-                  key={`${course.id}-${course.slug}`}
+                  key={`${course.id}-${course.seo_url}`}
                   onClick={() => setSelectedCourse(course.seo_url)}
                 >
                   {course.course_name}
@@ -396,7 +395,10 @@ export default function Courses() {
                       <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
                         <BookOpen size={16} /> Category
                       </h4>
-                      <p className="text-gray-900">{courseCategoryList.find(cat => cat.id.toString() === course.category)?.name}</p>
+                      <p className="text-gray-900">
+                        {courseCategoryList.find(cat => cat.id === course.category_id)?.name}
+                      </p>
+                      {/* <p>{course.category_id}</p> */}
                     </div>
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
@@ -452,9 +454,9 @@ export default function Courses() {
                 },
                 {
                   header: "Category",
-                  accessor: "category",
+                  accessor: "category_id",
                   render: (value) => {
-                    const category = courseCategoryList.find(cat => cat.id.toString() === value);
+                    const category = courseCategoryList.find(cat => cat.id === value);
                     return category ? category.name : "-";
                   }
                 },

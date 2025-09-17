@@ -1,22 +1,21 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Course } from "@/types/course";
-import {Accordion,AccordionItem,AccordionTrigger,AccordionContent,} from "@/components/ui/accordion";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent, } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getCoursesCategory } from "@/lib/coursecategory-api";
 import { CourseCategory } from "@/types/coursecategory";
 import { getCoursesType } from "@/lib/coursetype-api";
 import { CourseType } from "@/types/coursetype";
-import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { Editor } from '@tinymce/tinymce-react';
 interface CourseSettingsProps {
     courseData?: Course | null;
 }
 
 export default function CourseSettings({ courseData }: CourseSettingsProps) {
-    const allItemIds = ["basic-course-information"];
+    const allItemIds = ["basic-course-information", "course-classification"];
 
     const [categories, setCategories] = useState<CourseCategory[]>([]);
     const [selectedCategory, setSelectedCategory] = useState("");
@@ -43,7 +42,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                 // Prefill selections if editing an existing course
                 if (courseData) {
                     const category = categoriesData.find(
-                        (c) => c.id === Number(courseData.category)
+                        (c) => c.id === Number(courseData.category_id)
                     );
                     if (category) setSelectedCategory(category.name);
 
@@ -191,7 +190,25 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
                             </div>
                         </div>
-                        <label className="text-lg font-medium m-2">Course Description</label>
+                        <div>
+                            <label className="text-lg font-medium m-2">One Line Description</label>
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium m-2">Description</label>
+                        </div>
+                        <div>
+                            <label className="text-lg font-medium m-2">Course Summary</label>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem
+                    value="course-classification"
+                    className="border rounded-lg mt-3">
+                    <AccordionTrigger className="flex bg-[#e4e7eb]  px-5">
+                        <h2>Course Classification</h2>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-5 py-3">
+                        <p>Hello</p>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
