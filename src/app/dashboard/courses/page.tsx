@@ -14,7 +14,10 @@ import { getCourses } from "@/lib/courses-api";
 import { Course } from "@/types/course";
 import Pagination from "@/components/ui/pagination";
 import Table from "@/components/ui/table";
-
+import { getCoursesCategory } from "@/lib/coursecategory-api";
+import { CourseCategory } from "@/types/coursecategory";
+import { getCoursesType } from "@/lib/coursetype-api";
+import { CourseType } from "@/types/coursetype";
 
 
 export default function Courses() {
@@ -29,6 +32,9 @@ export default function Courses() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
   const [tableSortConfig, setTableSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [courseCategoryList, setCourseCategoryList] = useState<CourseCategory[]>([]);
+  const [courseTypeList, setCourseTypeList] = useState<CourseType[]>([]);
+
 
   const sortBy = [
     { label: "Newest", value: "newest" },
@@ -53,8 +59,30 @@ export default function Courses() {
   }, []);
 
   // Get unique categories & course types
-  const uniqueCategories = [...new Set(coursesList.map((c) => c.category))];
-  const uniqueCourseTypes = [...new Set(coursesList.map((c) => c.course_type))];
+
+  useEffect(() => {
+    const loadCourseCategories = async () => {
+      try {
+        const categories = await getCoursesCategory();
+        setCourseCategoryList(categories.filter(c => c.status === 1));
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCourseCategories();
+  }, []);
+  useEffect(() => {
+    const loadCourseType = async () => {
+      try {
+        const coursetype = await getCoursesType();
+        setCourseTypeList(coursetype.filter(c => c.status === 1));
+      } catch (error) {
+        console.error('Failed to load coursetype:', error);
+      }
+    };
+    loadCourseType();
+  }, []);
+
   const statusColor: Record<string, string> = {
     active: "bg-green-100 text-green-800",
     inactive: "bg-red-100 text-red-800",
@@ -83,7 +111,7 @@ export default function Courses() {
 
     // Course Type filter
     if (selectedCourseType) {
-      result = result.filter((c) => c.course_type === selectedCourseType);
+      result = result.filter((c) => c.course_type_id.toString() === selectedCourseType);
     }
 
     // Sorting (only for grid view)
@@ -198,7 +226,7 @@ export default function Courses() {
               {coursesList.map((course) => (
                 <DropdownMenuItem
                   key={`${course.id}-${course.slug}`}
-                  onClick={() => setSelectedCourse(course.slug)}
+                  onClick={() => setSelectedCourse(course.seo_url)}
                 >
                   {course.course_name}
                 </DropdownMenuItem>
@@ -214,7 +242,7 @@ export default function Courses() {
                 className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
               >
                 <span className="truncate">
-                  {selectedCategory === "" ? "Select Category" : selectedCategory}
+                  {selectedCategory === "" ? "Select Category" : courseCategoryList.find(cat => cat.id.toString() === selectedCategory)?.name}
                 </span>
                 <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
@@ -223,12 +251,12 @@ export default function Courses() {
               <DropdownMenuItem onClick={() => setSelectedCategory("")}>
                 Select Category
               </DropdownMenuItem>
-              {uniqueCategories.map((category) => (
+              {courseCategoryList.map((category) => (
                 <DropdownMenuItem
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id.toString())}
                 >
-                  {category}
+                  {category.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -242,7 +270,7 @@ export default function Courses() {
                 className="flex-[4] gap-2 rounded-lg border-gray-300 text-left justify-between"
               >
                 <span className="truncate">
-                  {selectedCourseType === "" ? "Select Course Type" : selectedCourseType}
+                  {selectedCourseType === "" ? "Select Course Type" : courseTypeList.find(type => type.id.toString() === selectedCourseType)?.name}
                 </span>
                 <ChevronDown size={16} className="flex-shrink-0" />
               </Button>
@@ -251,12 +279,12 @@ export default function Courses() {
               <DropdownMenuItem onClick={() => setSelectedCourseType("")}>
                 Select Course Type
               </DropdownMenuItem>
-              {uniqueCourseTypes.map((type) => (
+              {courseTypeList.map((type) => (
                 <DropdownMenuItem
-                  key={type}
-                  onClick={() => setSelectedCourseType(type)}
+                  key={type.id}
+                  onClick={() => setSelectedCourseType(type.id.toString())}
                 >
-                  {type}
+                  {type.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -330,7 +358,7 @@ export default function Courses() {
                     {/* Left - Title + Code */}
                     <div>
                       <span className="inline-block bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full font-medium">
-                        {course.coursecode}
+                        {course.short_code}
                       </span>
                       <h2 className="text-lg font-bold mt-2 leading-snug line-clamp-2 h-[3rem]">{course.course_name}</h2>
                     </div>
@@ -338,12 +366,12 @@ export default function Courses() {
                     {/* Status + Actions */}
                     <div className="flex flex-col items-end gap-2">
                       <span
-                        className={`text-xs px-3 py-1 rounded-full font-medium ${course.status === "inactive"
+                        className={`text-xs px-3 py-1 rounded-full font-medium ${course.status === 0
                           ? "bg-red-100 text-red-700"
                           : "bg-green-100 text-green-700"
                           }`}
                       >
-                        {course.status === "active" ? "Live" : "Draft"}
+                        {course.status === 1 ? "Live" : "Draft"}
                       </span>
                       <div className="flex gap-2">
                         <Button className="p-2 bg-gray-100 hover:bg-blue-50 rounded-lg text-blue-600">
@@ -368,13 +396,15 @@ export default function Courses() {
                       <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
                         <BookOpen size={16} /> Category
                       </h4>
-                      <p className="text-gray-900">{course.category}</p>
+                      <p className="text-gray-900">{courseCategoryList.find(cat => cat.id.toString() === course.category)?.name}</p>
                     </div>
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
                         <GraduationCap size={20} /> Course Type
                       </h4>
-                      <p className="text-gray-900">{course.course_type}</p>
+                      <p className="text-gray-900">
+                        {courseTypeList.find(type => type.id === course.course_type_id)?.name || "-"}
+                      </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -417,18 +447,25 @@ export default function Courses() {
                 },
                 {
                   header: "Course Code",
-                  accessor: "coursecode",
+                  accessor: "short_code",
                   sortable: true
                 },
                 {
                   header: "Category",
                   accessor: "category",
-                  sortable: true
+                  render: (value) => {
+                    const category = courseCategoryList.find(cat => cat.id.toString() === value);
+                    return category ? category.name : "-";
+                  }
                 },
                 {
                   header: "Course Type",
-                  accessor: "course_type",
-                  sortable: true
+                  accessor: "course_type_id",
+                  sortable: true,
+                  render: (value) => {
+                    const type = courseTypeList.find(t => t.id === value);
+                    return type ? type.name : "-";
+                  }
                 },
                 {
                   header: "Duration",
@@ -447,11 +484,17 @@ export default function Courses() {
                 {
                   header: "Status",
                   accessor: "status",
-                  render: (value) => (
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${statusColor[String(value)]}`}>
-                      {value === "active" ? "Live" : "Draft"}
-                    </span>
-                  )
+                  sortable: true,
+                  render: (value) => {
+                    const statusKey = value === 1 ? "active" : "inactive";
+                    return (
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-medium ${statusColor[statusKey]}`}
+                      >
+                        {value === 1 ? "Live" : "Draft"}
+                      </span>
+                    );
+                  }
                 },
                 {
                   header: "Actions",

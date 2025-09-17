@@ -360,7 +360,6 @@ function LoginContent() {
 
   return (
     <>
-      {/* Header */}
       <div className={styles.loginHeader}>
         <h2>Welcome Back</h2>
         <p>Sign in to access your MedAI Content dashboard</p>
@@ -375,6 +374,10 @@ function LoginContent() {
             setLoginMode('otp');
             resetForm();
             setPassword('');
+            // Focus on identifier input after mode change
+            setTimeout(() => {
+              identifierInputRef.current?.focus();
+            }, 100);
           }}
         >
           Login with OTP
@@ -386,64 +389,18 @@ function LoginContent() {
             setLoginMode('password');
             resetForm();
             setPassword('');
+            // Focus on identifier input after mode change
+            setTimeout(() => {
+              identifierInputRef.current?.focus();
+            }, 100);
           }}
         >
           Login with Password
         </button>
       </div>
 
-      {/* Smart Input Field */}
-      {!otpSent && (
-        <div className={styles.formGroup}>
-          <label htmlFor="identifier" className={styles.formLabel}>
-            Email or Mobile Number
-          </label>
-          <input
-            type="text"
-            id="identifier"
-            className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''
-              }`}
-            placeholder="Enter email or mobile number"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            onKeyPress={handleKeyPress}
-            ref={identifierInputRef}
-            disabled={isLoading}
-            required
-          />
-          {loginMode === 'otp' && <p className="mt-5">{getInputTypeHint()}</p>}
-        </div>
-      )}
-
-      {/* Password Input (shown only in password mode) */}
-      {loginMode === 'password' && !otpSent ? (
-        <div className={styles.formGroup}>
-          <label htmlFor="password" className={styles.formLabel}>
-            Password
-          </label>
-          <div className={styles.passwordWrapper}>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              className={styles.formInput}
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isLoading}
-              required
-            />
-            <button
-              type="button"
-              className={styles.passwordToggle}
-              onClick={() => setShowPassword(!showPassword)}
-              disabled={isLoading}
-            >
-              {showPassword ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-        </div>
-      ) : loginMode === 'otp' && otpSent ? (
+      {/* OTP Input Fields (shown after OTP is sent in OTP mode only) */}
+      {otpSent && loginMode === 'otp' && (
         <div className={styles.formGroup}>
           <label htmlFor="otp" className={styles.formLabel}>
             Enter OTP sent to {getMaskedDisplay()}
@@ -457,7 +414,7 @@ function LoginContent() {
                 className={styles.otpInput}
                 value={digit}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, ''); // digits only
+                  const value = e.target.value.replace(/\D/g, ''); // Remove non-digits
                   handleOtpChange(index, value);
                 }}
                 onKeyDown={(e) => handleKeyDown(index, e)}
@@ -471,8 +428,7 @@ function LoginContent() {
           <div className={styles.resendContainer}>
             <button
               type="button"
-              className={`${styles.resendButton} ${resendTimer > 0 ? styles.resendDisabled : styles.resendActive
-                }`}
+              className={`${styles.resendButton} ${resendTimer > 0 ? styles.resendDisabled : styles.resendActive}`}
               onClick={handleResendOTP}
               disabled={!canResend || isLoading}
             >
@@ -488,27 +444,97 @@ function LoginContent() {
             </button>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {/* OTP Input (shown only after OTP is sent) */}
+      {/* Input Fields - only show when OTP is NOT sent */}
+      {!otpSent && (
+        <>
+          {loginMode === 'otp' ? (
+            <div className={styles.formGroup}>
+              <label htmlFor="identifier" className={styles.formLabel}>
+                Email or Mobile Number
+              </label>
+              <input
+                type="text"
+                id="identifier"
+                className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
+                placeholder='Enter email or mobile number'
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                onKeyPress={handleKeyPress}
+                ref={identifierInputRef}
+                disabled={isLoading}
+                required
+              />
+              {getInputTypeHint() && <p className='mt-5'>{getInputTypeHint()}</p>}
+            </div>
+          ) : (
+            <div className={styles.passwordModeInputs}>
+              <div className={styles.formGroup}>
+                <label htmlFor="identifier" className={styles.formLabel}>
+                  Email
+                </label>
+                <input
+                  type="text"
+                  id="identifier"
+                  className={`${styles.formInput} ${detectedType === 'invalid' && identifier ? styles.inputError : ''}`}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  ref={identifierInputRef}
+                  disabled={isLoading}
+                  required
+                />
+                {getInputTypeHint() && <p className='mt-2'>{getInputTypeHint()}</p>}
+              </div>
 
+              <div className={styles.formGroup}>
+                <label htmlFor="password" className={styles.formLabel}>
+                  Password
+                </label>
+                <div className={styles.passwordWrapper}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className={styles.formInput}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
-      {/* Remember Me Checkbox */}
-      <div className={styles.formCheckbox}>
-        <input
-          type="checkbox"
-          id="remember"
-          className={styles.checkbox}
-          checked={rememberMe}
-          onChange={(e) => setRememberMe(e.target.checked)}
-        />
-        <label htmlFor="remember" className={styles.checkboxLabel}>
-          Remember me
-        </label>
-      </div>
+      {/* Remember me checkbox - only show when not in OTP verification state */}
+      {!otpSent && (
+        <div className={styles.formCheckbox}>
+          <input
+            type="checkbox"
+            id="remember"
+            className={styles.checkbox}
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+          />
+          <label htmlFor="remember" className={styles.checkboxLabel}>
+            Remember me
+          </label>
+        </div>
+      )}
 
       {/* Action Button */}
-      {loginMode === 'password' ? (
+      {loginMode === 'password' && !otpSent ? (
         <button
           type="button"
           className={`${styles.btnPrimary} ${isLoading ? styles.btnLoading : ''}`}
@@ -537,30 +563,27 @@ function LoginContent() {
         </button>
       )}
 
-      {/* Divider */}
+      {/* Only show Google login when not in OTP verification state */}
+
       <div className={styles.divider}>
         <span>OR</span>
       </div>
 
-      {/* Google Login */}
       <GoogleLogin
         disabled={isLoading}
         onSuccess={() => {
-          // Optional: handle success
+          // Optional: additional success handling
         }}
         onError={(errorMsg) => {
+          // Optional: additional error handling using errorMsg
           console.error('Google login error:', errorMsg);
         }}
       />
 
-      {/* Footer */}
+
       <div className={styles.poweredBy}>
-        Powered by{' '}
-        <a href="https://medvarsity.com" target="_blank">
-          Medvarsity
-        </a>
+        Powered by <a href="https://medvarsity.com" target="_blank">Medvarsity</a>
       </div>
     </>
   );
-
 }

@@ -203,6 +203,7 @@
 
 .formGroup {
   margin-bottom: 25px;
+  min-height: 135px;
 }
 
 .formLabel {
@@ -712,4 +713,23 @@
 
 :global(.dark) .inputHintError {
   color: #f87171;
+}
+/* Container for side-by-side inputs in password mode */
+.passwordModeInputs {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.passwordModeInputs .formGroup {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .passwordModeInputs {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }

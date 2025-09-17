@@ -1,13 +1,13 @@
-// import { Course } from '@/types/course';
+// import { CourseType } from '@/types/coursetype';
 // import { fetchWithHeaders } from './api-client';
 
-// export async function getCourses(): Promise<Course[]> {
+// export async function getCoursesType(): Promise<CourseType[]> {
 //   try {
 //     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 //     if (!baseUrl) {
 //       throw new Error('API base URL is not defined');
 //     }
-//     const response = await fetchWithHeaders(`${baseUrl}/api/courses`, {
+//     const response = await fetchWithHeaders(`${baseUrl}/api/course-type`, {
 //       method: 'GET'
 //     });
 
@@ -42,23 +42,23 @@
 //     throw new Error(`Courses API Error (${errorStatus}): ${errorMessage}`);
 //   }
 // }
-import { Course } from '@/types/course';
-import { coursesList } from '@/lib/data/courses-data';
+import { CourseType } from '@/types/coursetype';
+import { CourseTypeList } from '@/lib/data/coursetype';
 
-export async function getCourses(): Promise<Course[]> {
+export async function getCoursesType(): Promise<CourseType[]> {
   // Simulate async operation
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(coursesList);
+      resolve(CourseTypeList);
     }, 100);
   });
 }
 
-export async function getCourse(id: number): Promise<Course | null> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const course = coursesList.find(c => c.id === id);
-      resolve(course || null);
-    }, 100);
-  });
-}
+// export async function getCourseType(id: number): Promise<CourseType | null> {
+//   return new Promise((resolve) => {
+//     setTimeout(() => {
+//       const course = CourseTypeList.find(c => c.id === id);
+//       resolve(course || null);
+//     }, 100);
+//   });
+// }
