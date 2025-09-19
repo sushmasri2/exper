@@ -1,3 +1,7 @@
+.loginPage {
+  display: contents; /* This class is used as a parent selector for global styles */
+}
+
 .body {
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -13,12 +17,7 @@
   box-sizing: border-box;
 }
 
-/* Fix for the diagonal pattern issue */
-/* This hides any overflowing content from body and html */
-:global(html),
-:global(body) {
-  overflow-x: hidden;
-}
+/* Fix for the diagonal pattern issue is now in globals.css */
 
 /* Animated background elements */
 .bgShapes {

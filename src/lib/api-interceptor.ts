@@ -99,11 +99,9 @@ function processQueue(token: string): void {
 export async function refreshAccessToken(): Promise<string> {
   try {
     if (!authCookies.hasAuthToken()) {
-      console.warn('No refresh token cookie available for token refresh');
       throw new Error('No refresh token available');
     }
 
-    console.log('Attempting to refresh access token...');
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
@@ -132,8 +130,6 @@ export async function refreshAccessToken(): Promise<string> {
       console.error('Refresh token response did not contain an access token');
       throw new Error('No access token in refresh response');
     }
-
-    console.log('Successfully refreshed access token');
 
     // We'll update the auth cookie with the new token
     authCookies.setAuthToken(data.accessToken);

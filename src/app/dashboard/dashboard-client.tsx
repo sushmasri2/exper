@@ -36,8 +36,8 @@ import {
 
 const navLinks = [
   { href: "/dashboard", label: "Overview", icon: <LayoutDashboard /> },
-  { href: "/dashboard/buildercourses", label: "Courses Builder", icon: <Building /> },
   { href: "/dashboard/courses", label: "Courses", icon: <Book /> },
+  { href: "/dashboard/buildercourses", label: "Courses Builder", icon: <Building /> },
   { href: "/dashboard/categories", label: "Courses Categories", icon: <Tag /> },
   {
     href: "/dashboard/activities", label: "Activities", icon: <SquareDashedKanbanIcon />,

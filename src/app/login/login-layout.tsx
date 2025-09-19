@@ -13,11 +13,21 @@ export function LoginLayout({ children }: LoginLayoutProps) {
 
   useEffect(() => {
     setMounted(true);
+
+    // Add login-page class to body and html for global styles
+    document.body.classList.add('login-page');
+    document.documentElement.classList.add('login-page');
+
+    return () => {
+      // Clean up when component unmounts
+      document.body.classList.remove('login-page');
+      document.documentElement.classList.remove('login-page');
+    };
   }, []);
   // Always render the layout structure, even if not mounted yet
   // This prevents layout shifts and flashing
   return (
-    <div className={styles.body} style={{ opacity: mounted ? 1 : 0.8, transition: 'opacity 0.3s' }}>
+    <div className={`${styles.body} ${styles.loginPage}`} style={{ opacity: mounted ? 1 : 0.8, transition: 'opacity 0.3s' }}>
       <div className={styles.bgShapes}>
         <div className={styles.shape}></div>
         <div className={styles.shape}></div>

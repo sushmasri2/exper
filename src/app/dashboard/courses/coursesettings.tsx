@@ -8,8 +8,9 @@ import { getCoursesCategory } from "@/lib/coursecategory-api";
 import { CourseCategory } from "@/types/coursecategory";
 import { getCoursesType } from "@/lib/coursetype-api";
 import { CourseType } from "@/types/coursetype";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { getAllEligibilities } from "@/lib/eligibility-api";
+import { Eligibility } from "@/types/eligibility";
+import Select2 from "@/components/ui/Select2";
 interface CourseSettingsProps {
     courseData?: Course | null;
 }
@@ -21,23 +22,27 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
     const [selectedCategory, setSelectedCategory] = useState("");
     const [courseTypes, setCourseTypes] = useState<CourseType[]>([]);
     const [selectedCourseType, setSelectedCourseType] = useState("");
+    const [eligibilities, setEligibilities] = useState<Eligibility[]>([]);
+    const [selectedEligibilities, setSelectedEligibilities] = useState<string[]>([]);
 
     const [openItems, setOpenItems] = useState<string[]>([]);
     const [formData, setFormData] = useState<Partial<Course>>({
         ...courseData,
     });
 
-    // Fetch categories + course types together
+    // Fetch categories + course types + eligibilities together
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [categoriesData, courseTypesData] = await Promise.all([
+                const [categoriesData, courseTypesData, eligibilitiesData] = await Promise.all([
                     getCoursesCategory(),
                     getCoursesType(),
+                    getAllEligibilities(),
                 ]);
 
                 setCategories(categoriesData);
                 setCourseTypes(courseTypesData);
+                setEligibilities(eligibilitiesData);
 
                 // Prefill selections if editing an existing course
                 if (courseData) {
@@ -50,6 +55,17 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                         (ct) => ct.id === Number(courseData.course_type_id)
                     );
                     if (courseType) setSelectedCourseType(courseType.name);
+
+                    // Handle eligibility selections if they exist in the course data
+                    if (courseData.eligibility) {
+                        // Assuming eligibility could be a string of comma-separated IDs or an array
+                        const eligibilityIds = typeof courseData.eligibility === 'string' 
+                            ? courseData.eligibility.split(',').map(id => id.trim())
+                            : Array.isArray(courseData.eligibility) 
+                                ? courseData.eligibility.map(String)
+                                : [];
+                        setSelectedEligibilities(eligibilityIds);
+                    }
                 }
             } catch (err) {
                 console.error("Error fetching data:", err);
@@ -65,29 +81,6 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
             setOpenItems([]); // collapse all
         } else {
             setOpenItems(allItemIds); // expand all
-        }
-    };
-
-    // Handle dropdown selections
-    const handleCategorySelect = (categoryName: string) => {
-        setSelectedCategory(categoryName);
-        const cat = categories.find((c) => c.name === categoryName);
-        if (cat) {
-            setFormData((prev) => ({
-                ...prev,
-                category: cat.id.toString(),
-            }));
-        }
-    };
-
-    const handleCourseTypeSelect = (typeName: string) => {
-        setSelectedCourseType(typeName);
-        const ct = courseTypes.find((c) => c.name === typeName);
-        if (ct) {
-            setFormData((prev) => ({
-                ...prev,
-                course_type: ct.id.toString(),
-            }));
         }
     };
 
@@ -120,7 +113,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                                 <Input
                                     type="text"
                                     placeholder="Course Title"
-                                    className="mt-1 mb-4"
+                                    className="mb-4 px-3 py-0"
                                     value={courseData?.course_name || ""}
                                     onChange={(e) =>
                                         setFormData({
@@ -131,70 +124,45 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                                 />
                             </div>
                             <div>
-                                <label className="text-lg font-medium m-2">Course Category</label>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full gap-2 rounded-lg border-gray-300 text-left justify-between mt-1 mb-4"
-                                        >
-                                            <span className="truncate">
-                                                {selectedCategory || "Select Category"}
-                                            </span>
-                                            <ChevronDown size={16} className="flex-shrink-0" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleCategorySelect("")}>
-                                            Select Category
-                                        </DropdownMenuItem>
-                                        {categories.map((category) => (
-                                            <DropdownMenuItem
-                                                key={category.id}
-                                                onClick={() => handleCategorySelect(category.name)}
-                                            >
-                                                {category.name}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <label className="text-lg font-medium m-2">Child Course</label>
+                                <Select2
+                                    options={[
+                                        { label: 'Select Child Course', value: '' },
+
+                                    ]}
+                                    value={typeof formData.child_course === 'string' ? formData.child_course : ''}
+                                    onChange={val => {
+                                        if (typeof val === 'string') {
+                                            setFormData(prev => ({ ...prev, child_course: val }));
+                                        }
+                                    }}
+                                    placeholder="Select Child Course"
+                                    style={{ padding: '0.6rem' }}
+                                />
                             </div>
                             <div>
                                 <label className="text-lg font-medium m-2">Course Type</label>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full gap-2 rounded-lg border-gray-300 text-left justify-between mt-1 mb-4"
-                                        >
-                                            <span className="truncate">
-                                                {selectedCourseType || "Select Course Type"}
-                                            </span>
-                                            <ChevronDown size={16} className="flex-shrink-0" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleCourseTypeSelect("")}>
-                                            Select Course Type
-                                        </DropdownMenuItem>
-                                        {courseTypes.map((type) => (
-                                            <DropdownMenuItem
-                                                key={type.id}
-                                                onClick={() => handleCourseTypeSelect(type.name)}
-                                            >
-                                                {type.name}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
+                                <Select2
+                                    options={courseTypes.length > 0 ? [{ label: 'Select Course Type', value: '' }, ...courseTypes.map(type => ({ label: type.name, value: type.id.toString() }))] : [{ label: 'Select Course Type', value: '' }]}
+                                    value={selectedCourseType === '' ? '' : courseTypes.find(ct => ct.name === selectedCourseType)?.id.toString() || ''}
+                                    onChange={val => {
+                                        if (typeof val === 'string') {
+                                            setSelectedCourseType(courseTypes.find(ct => ct.id.toString() === val)?.name || '');
+                                            setFormData(prev => ({ ...prev, course_type: val }));
+                                        }
+                                    }}
+                                    placeholder="Select Course Type"
+                                    style={{ padding: '0.6rem' }}
+                                />
                             </div>
                         </div>
                         <div>
                             <label className="text-lg font-medium m-2">One Line Description</label>
+
                         </div>
                         <div>
                             <label className="text-lg font-medium m-2">Description</label>
+
                         </div>
                         <div>
                             <label className="text-lg font-medium m-2">Course Summary</label>
@@ -208,7 +176,50 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                         <h2>Course Classification</h2>
                     </AccordionTrigger>
                     <AccordionContent className="px-5 py-3">
-                        <p>Hello</p>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div>
+                                <label className="text-lg font-medium m-2">Course Eligibility</label>
+                                <Select2
+                                    multiple={true}
+                                    options={eligibilities.length > 0 
+                                        ? eligibilities
+                                            .filter(eligibility => eligibility && eligibility.eligibility_criteria && eligibility.id)
+                                            .map(eligibility => ({ 
+                                                label: eligibility.eligibility_criteria, 
+                                                value: eligibility.id 
+                                            }))
+                                        : []
+                                    }
+                                    value={selectedEligibilities}
+                                    onChange={(val) => {
+                                        if (Array.isArray(val)) {
+                                            setSelectedEligibilities(val);
+                                            setFormData(prev => ({ 
+                                                ...prev, 
+                                                eligibility: val.join(',') // Store as comma-separated string
+                                            }));
+                                        }
+                                    }}
+                                    placeholder="Select Eligibilities"
+                                    style={{ padding: '0.6rem' }}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-lg font-medium m-2">Course Category</label>
+                                <Select2
+                                    options={categories.length > 0 ? [{ label: 'Select Category', value: '' }, ...categories.map(cat => ({ label: cat.name, value: cat.id.toString() }))] : [{ label: 'Select Category', value: '' }]}
+                                    value={selectedCategory === '' ? '' : categories.find(cat => cat.name === selectedCategory)?.id.toString() || ''}
+                                    onChange={val => {
+                                        if (typeof val === 'string') {
+                                            setSelectedCategory(categories.find(cat => cat.id.toString() === val)?.name || '');
+                                            setFormData(prev => ({ ...prev, category: val }));
+                                        }
+                                    }}
+                                    placeholder="Select Category"
+                                    style={{ padding: '0.6rem' }}
+                                />
+                            </div>
+                        </div>
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>

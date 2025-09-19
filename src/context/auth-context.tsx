@@ -288,7 +288,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyEmailOTP = async (email: string, otp: string): Promise<AuthResponse | { success: false, message: string }> => {
     setLoading(true);
     try {
-      console.log(`Calling verify Email OTP API for email: ${email}`);
+      // API call for email OTP verification
       const url = `${API_BASE_URL}/auth/otp/verify`;
       const { fetchWithInterceptor } = await import('@/lib/api-interceptor');
 
@@ -302,7 +302,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include'
       });
 
-      console.log('OTP verification API response status:', response.status);
       const data = await response.json();
 
       if (!response.ok) {
@@ -337,7 +336,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set the auth token in cookie for SSO
       if (authResponse.accessToken) {
         authCookies.setAuthToken(authResponse.accessToken);
-        console.log(`Set ${authCookies.getAuthCookieName()} cookie for Email login`);
       }
 
       setUser(authResponse.user);
@@ -382,7 +380,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include'
       });
 
-      console.log('OTP verification API response status:', response.status);
       const data = await response.json();
 
       if (!response.ok) {
@@ -417,7 +414,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set the auth token in cookie for SSO
       if (authResponse.accessToken) {
         authCookies.setAuthToken(authResponse.accessToken);
-        console.log(`Set ${authCookies.getAuthCookieName()} cookie for Mobile login`);
       }
 
       setUser(authResponse.user);
@@ -443,7 +439,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     setLoading(true);
     try {
-      console.log('Logout function called in auth-context');
       const storedUserData = userStorage.getItem();
       let tokenToUse = user?.token;
       if (!tokenToUse && storedUserData) {
@@ -471,7 +466,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (success) {
             // Remove the auth token cookie
             authCookies.removeAuthToken();
-            console.log(`Removed ${authCookies.getAuthCookieName()} cookie`);
             showToast('Successfully logged out from all devices', 'success');
           } else {
             // Clean up local cookie even if the server logout failed
@@ -489,12 +483,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (authCookies.hasAuthToken()) {
           authCookies.removeAuthToken();
         }
-        console.log('No token available for logout API call');
       }
     } catch (error) {
       console.error("Error during logout process:", error);
     } finally {
-      console.log('Performing local logout operations');
       setUser(null);
       userStorage.removeItem();
       setLoading(false);
@@ -546,12 +538,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           permissions: data.user.permissions
         }
       };
-      console.log('Google login successful, received auth response:', {
-        ...authResponse,
-        accessToken: authResponse.accessToken ? '***TOKEN***' : undefined
-      });
-
-      console.log('Google login authResponse:', authResponse);
 
       // Set the user data and token
       const userData: User = {
@@ -576,7 +562,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set the auth token in cookie for SSO
       if (authResponse.accessToken) {
         authCookies.setAuthToken(authResponse.accessToken);
-        console.log(`Set ${authCookies.getAuthCookieName()} cookie for Google login`);
       }
 
       setUser(userData);

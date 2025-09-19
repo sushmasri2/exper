@@ -167,8 +167,6 @@ export async function authenticateWithGoogle(idToken: string): Promise<AuthRespo
 
     showToast('Login successful', 'success');
 
-    console.log('Google authentication successful, received data:', data);
-
     return {
       accessToken: data.accessToken || data.token || data.access_token, // Support multiple formats for backward compatibility
       user: {
@@ -228,7 +226,6 @@ export async function logoutUser(): Promise<{ success: boolean; message: string 
         message: 'Logged out locally. Server sync failed.'
       };
     }
-    console.log('Logout API call successful');
 
     return {
       success: true,

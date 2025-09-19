@@ -179,3 +179,10 @@
 .stroke-info-200 {
   stroke: var(--info-200);
 }
+
+/* Fix for the diagonal pattern issue on login page */
+/* This hides any overflowing content from body and html */
+body.login-page,
+html.login-page {
+  overflow-x: hidden;
+}
