@@ -1,71 +1,93 @@
 import { Eligibility } from '@/types/eligibility';
 import { fetchWithHeaders } from './api-client';
 
+// Interface for the course eligibility API response
+interface CourseEligibilityResponse {
+  status: string;
+  data: {
+    course_uuid: string;
+    eligibilities: {
+      id: number;
+      eligibility_uuid: string;
+      eligibility_name: string;
+      eligibility_status: number;
+      created_at: string;
+      updated_at: string;
+    }[];
+  };
+}
 
-export async function getEligibility(): Promise<Eligibility | null> {
+export async function getEligibilities(): Promise<Eligibility[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
-    
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }
 
-    const fullUrl = `${baseUrl}/api/eligibility`;
+    let allEligibilities: Eligibility[] = [];
+    let page = 1;
+    let hasMore = true;
+    const pageSize = 100; // Adjust as needed for your API
 
-    // Try without interceptor first - use plain fetch
-    const response = await fetchWithHeaders(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
+    while (hasMore) {
+      const fullUrl = `${baseUrl}/api/eligibility?page=${page}&limit=${pageSize}`;
+      const response = await fetchWithHeaders(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Error Response:', errorText);
+        throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error Response:', errorText);
-      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+      const result = await response.json();
+
+      if (result.success !== undefined && !result.success) {
+        throw new Error(result.message || 'Unknown API error');
+      }
+
+      let eligibilities: Eligibility[] = [];
+      if (result.data) {
+        eligibilities = result.data;
+      } else if (Array.isArray(result)) {
+        eligibilities = result;
+      } else {
+        throw new Error('Unexpected response structure');
+      }
+
+      allEligibilities = allEligibilities.concat(eligibilities);
+
+      // If less than pageSize returned, assume last page
+      if (eligibilities.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
     }
 
-    const result = await response.json();
-
-    // Check if response has the expected structure
-    if (result.success !== undefined && !result.success) {
-      throw new Error(result.message || 'Unknown API error');
-    }
-
-    // Handle different response structures
-    if (result.data) {
-      return result.data;
-    } else if (Array.isArray(result)) {
-      // If result is an array, return the first element or null if empty
-      return result.length > 0 ? result[0] : null;
-    } else {
-      throw new Error('Unexpected response structure');
-    }
-
+    return allEligibilities;
   } catch (error) {
-    console.error('Error fetching Eligibility:', error);
-
+    console.error('Error fetching eligibilities:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error('Network error: Unable to connect to the API');
     }
-
     throw error;
   }
 }
 
-export async function getAllEligibilities(): Promise<Eligibility[]> {
+export async function getCourseEligibilities(courseUuid: string): Promise<Eligibility[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
-    
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }
 
-    const fullUrl = `${baseUrl}/api/eligibility`;
-
+    const fullUrl = `${baseUrl}/api/courses/${courseUuid}/eligibility`;
     const response = await fetchWithHeaders(fullUrl, {
       method: 'GET',
       headers: {
@@ -80,29 +102,38 @@ export async function getAllEligibilities(): Promise<Eligibility[]> {
       throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    const result: CourseEligibilityResponse = await response.json();
 
-    // Check if response has the expected structure
-    if (result.success !== undefined && !result.success) {
-      throw new Error(result.message || 'Unknown API error');
+    if (result.status !== 'success') {
+      throw new Error('API returned error status');
     }
 
-    // Handle different response structures
-    if (result.data) {
-      return Array.isArray(result.data) ? result.data : [result.data];
-    } else if (Array.isArray(result)) {
-      return result;
+    let eligibilities: Eligibility[] = [];
+    
+    // Handle the specific API response structure
+    if (result.data && result.data.eligibilities && Array.isArray(result.data.eligibilities)) {
+      // Map the response structure to match our Eligibility type
+      eligibilities = result.data.eligibilities.map((item) => ({
+        id: item.id.toString(),
+        uuid: item.eligibility_uuid,
+        name: item.eligibility_name,
+        description: item.eligibility_name, // Using name as description since it's not provided
+        course_id: result.data.course_uuid,
+        eligibility_criteria: '', // Not provided in response
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
     } else {
-      throw new Error('Unexpected response structure');
+      console.warn('Unexpected course eligibilities response structure:', result);
+      eligibilities = [];
     }
 
+    return eligibilities;
   } catch (error) {
-    console.error('Error fetching all Eligibilities:', error);
-
+    console.error('Error fetching course eligibilities:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error('Network error: Unable to connect to the API');
     }
-
     throw error;
   }
 }

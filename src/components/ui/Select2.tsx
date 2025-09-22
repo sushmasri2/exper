@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 export type Select2Option = {
@@ -27,26 +28,65 @@ const Select2: React.FC<Select2Props> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const selectRef = useRef<HTMLDivElement>(null);
 
   // Filter out invalid options (those without label or value)
   const validOptions = options.filter(opt => opt && opt.label && opt.value);
 
   // Close dropdown when clicking outside
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.select2-dropdown')) {
+      if (!target.closest('.select2-dropdown') && !selectRef.current?.contains(target)) {
         setOpen(false);
+        setSearch('');
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  // Update dropdown position when window resizes
+  useEffect(() => {
+    if (!open) return;
+    const handleResize = () => {
+      if (selectRef.current) {
+        const rect = selectRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize);
+    };
+  }, [open]);
+
   const filteredOptions = validOptions.filter(opt =>
     opt?.label?.toLowerCase()?.includes(search.toLowerCase()) || false
   );
+
+  const handleToggle = () => {
+    if (!open && selectRef.current) {
+      const rect = selectRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+    setOpen(!open);
+    if (!open) {
+      setSearch('');
+    }
+  };
 
   const handleSelect = (option: Select2Option) => {
     if (multiple) {
@@ -59,6 +99,7 @@ const Select2: React.FC<Select2Props> = ({
     } else {
       onChange(option.value);
       setOpen(false);
+      setSearch('');
     }
   };
 
@@ -70,11 +111,12 @@ const Select2: React.FC<Select2Props> = ({
   };
 
   return (
-  <div style={{ position: 'relative' }} className={className}>
+    <div style={{ position: 'relative' }} className={className}>
       <div
+        ref={selectRef}
         className='rounded-lg border border-gray-300 bg-white px-3 py-1 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 flex items-center justify-between cursor-pointer'
         style={style}
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         tabIndex={0}
         role="button"
         aria-haspopup="listbox"
@@ -89,17 +131,17 @@ const Select2: React.FC<Select2Props> = ({
         </span>
         <ChevronDown size={18} className="ml-2 text-gray-400" />
       </div>
-      {open && (
+
+      {open && typeof window !== 'undefined' && createPortal(
         <div
-          className="select2-dropdown rounded-lg border border-gray-300 bg-white shadow-lg mt-1"
+          className="select2-dropdown rounded-lg border border-gray-300 bg-white shadow-lg"
           style={{
             position: 'absolute',
-            top: '100%',
-            left: 0,
-            minWidth: '100%',
-            border: '1px solid #ccc',
-            background: '#fff',
-            zIndex: 1000,
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+            minWidth: dropdownPosition.width,
+            zIndex: 9999,
             maxHeight: 250,
             overflowY: 'auto',
           }}
@@ -111,12 +153,8 @@ const Select2: React.FC<Select2Props> = ({
               onChange={e => setSearch(e.target.value)}
               placeholder="Search..."
               style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderBottom: '1px solid #eee' }}
+              autoFocus
             />
-            {multiple && (
-              <div style={{ textAlign: 'right', padding: '4px 8px' }}>
-                <button type="button" onClick={() => setOpen(false)} style={{ cursor: 'pointer', border: 'none', background: 'none', color: '#1890ff' }}>Close</button>
-              </div>
-            )}
           </div>
           {filteredOptions.length === 0 && (
             <div style={{ padding: '8px', color: '#888' }}>No options</div>
@@ -133,6 +171,16 @@ const Select2: React.FC<Select2Props> = ({
                 alignItems: 'center',
                 gap: '8px',
               }}
+              onMouseEnter={e => {
+                if (!isSelected(opt)) {
+                  (e.target as HTMLElement).style.background = '#f5f5f5';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isSelected(opt)) {
+                  (e.target as HTMLElement).style.background = '#fff';
+                }
+              }}
             >
               {multiple && (
                 <input
@@ -148,7 +196,8 @@ const Select2: React.FC<Select2Props> = ({
               )}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
