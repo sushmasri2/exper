@@ -170,8 +170,25 @@ export async function fetchWithInterceptor(
   }
   requestOptions.credentials = 'include'; // Important for sending cookies
 
+  let token: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const userRaw = localStorage.getItem('medai_user');
+      if (userRaw) {
+        const userObj = JSON.parse(userRaw);
+        if (userObj && userObj.token) {
+          token = userObj.token;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading token from localStorage:', e);
+    }
+  }
+  // Fallback to cookie if not found in localStorage
+  if (!token) {
+    token = authCookies.getAuthToken();
+  }
   // Check if we have a token and if it needs refresh
-  let token = authCookies.getAuthToken();
   if (token && shouldRefreshToken(token)) {
     console.log('Token is approaching expiration, refreshing proactively...');
     if (isRefreshing) {

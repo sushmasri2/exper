@@ -71,12 +71,23 @@ export default function Courses() {
   useEffect(() => {
     const fetchAllPricing = async () => {
       try {
-        const map: Record<string, CoursePricing[]> = {};
-        for (const course of coursesList) {
-          const prices = await getCoursePricing(course.uuid);
-          map[course.id] = prices;
-        }
+        // Fetch in parallel for performance
+        const entries = await Promise.all(
+          coursesList.map(async (course) => {
+            try {
+              const prices = await getCoursePricing(course.uuid);
+              return [course.id.toString(), prices] as const; // key by numeric id as string
+            } catch (e) {
+              console.error(`Pricing fetch failed for course ${course.id}/${course.uuid}:`, e);
+              return [course.id.toString(), [] as CoursePricing[]] as const;
+            }
+          })
+        );
+
+        const map = Object.fromEntries(entries) as Record<string, CoursePricing[]>;
         setPricingMap(map);
+        // Optional: compact log for verification
+        // console.log('Pricing Map built:', map);
       } catch (error) {
         console.error("Error fetching pricing:", error);
       }
@@ -85,6 +96,7 @@ export default function Courses() {
     if (coursesList.length > 0) {
       fetchAllPricing();
     }
+
   }, [coursesList]);
 
   // Use our custom hooks for filtering and sorting

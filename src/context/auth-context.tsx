@@ -52,6 +52,11 @@ export function useAuth() {
   }
   return context;
 }
+const getTokenFromCookie = () => {
+  const token = authCookies.getAuthToken();
+  console.log('Retrieved token from cookie:', token);
+  return token;
+};
 
 // Create a more secure storage utility
 const createSecureStorage = (key: string) => {
@@ -98,14 +103,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkSession = async () => {
       // 1. Try to load user from local storage (for fast hydration)
       const storedUser = userStorage.getItem();
+      let parsedUser = null;
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser));
+          parsedUser = JSON.parse(storedUser);
         } catch (error) {
           console.error("Failed to parse user from storage", error);
           userStorage.removeItem();
         }
       }
+      if (parsedUser && parsedUser.token) {
+        setUser(parsedUser);
+        setLoading(false);
+        return;
+      }
+
 
       // 2. Check session cache in sessionStorage
       let shouldFetchSession = true;
@@ -319,16 +331,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authResponse = {
         accessToken: data.accessToken || data.token || data.access_token,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          mobile: data.user.mobile,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          avatar: data.user.avatar,
-          isGoogleAuth: data.user.isGoogleAuth,
-          lastLogin: data.user.lastLogin,
-          roles: data.user.roles,
-          permissions: data.user.permissions,
+          id: data.user_id,
+          email: data.user_email,
+          mobile: data.user_mobile,
+          firstName: data.user_firstName,
+          lastName: data.user_lastName,
+          avatar: data.user_avatar,
+          isGoogleAuth: data.user_isGoogleAuth,
+          lastLogin: data.user_lastLogin,
+          roles: data.user_roles,
+          permissions: data.user_permissions,
           token: data.accessToken || data.token || data.access_token, // For backward compatibility
         }
       };
@@ -397,16 +409,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authResponse = {
         accessToken: data.accessToken || data.token || data.access_token,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          mobile: data.user.mobile,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          avatar: data.user.avatar,
-          isGoogleAuth: data.user.isGoogleAuth,
-          lastLogin: data.user.lastLogin,
-          roles: data.user.roles,
-          permissions: data.user.permissions,
+          id: data.user_id,
+          email: data.user_email,
+          mobile: data.user_mobile,
+          firstName: data.user_firstName,
+          lastName: data.user_lastName,
+          avatar: data.user_avatar,
+          isGoogleAuth: data.user_isGoogleAuth,
+          lastLogin: data.user_lastLogin,
+          roles: data.user_roles,
+          permissions: data.user_permissions,
           token: data.accessToken || data.token || data.access_token, // For backward compatibility
         }
       };
@@ -414,6 +426,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set the auth token in cookie for SSO
       if (authResponse.accessToken) {
         authCookies.setAuthToken(authResponse.accessToken);
+        console.log(`Set ${authCookies.getAuthCookieName()} cookie for Mobile login`);
+        // Debug log: confirm token is retrievable from cookie
+        console.log('Token in cookie after login:', authCookies.getAuthToken());
       }
 
       setUser(authResponse.user);
@@ -527,7 +542,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authResponse: AuthResponse = {
         accessToken: data.accessToken || data.token || data.access_token,
         user: {
-          id: data.user.id,
+          id: data.user_id,
           email: data.user.email,
           firstName: data.user.firstName,
           lastName: data.user.lastName,
@@ -675,26 +690,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       showToast('Login successful', 'success');
+      let userObj = undefined;
+      if (data.userDetails && data.userDetails.user) {
+        userObj = data.userDetails.user;
+      } else if (data.user) {
+        userObj = data.user;
+      }
+      if (!userObj) {
+        throw new Error('No user object found in response');
+      }
       const authResponse = {
         accessToken: data.accessToken || data.token || data.access_token,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          mobile: data.user.mobile,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          avatar: data.user.avatar,
-          isGoogleAuth: data.user.isGoogleAuth,
-          lastLogin: data.user.lastLogin,
-          roles: data.user.roles,
-          permissions: data.user.permissions,
-          token: data.accessToken || data.token || data.access_token,
+          id: String(userObj.id),
+          email: userObj.email,
+          mobile: userObj.mobile,
+          firstName: userObj.firstName,
+          lastName: userObj.lastName,
+          avatar: userObj.avatar,
+          isGoogleAuth: false,
+          lastLogin: userObj.lastLogin,
+          roles: userObj.roles,
+          permissions: userObj.permissions,
+          token: data.accessToken || data.token || data.access_token, // For backward compatibility
         }
       };
 
       if (authResponse.accessToken) {
         authCookies.setAuthToken(authResponse.accessToken);
         console.log(`Set ${authCookies.getAuthCookieName()} cookie for password login`);
+        // Debug log: confirm token is retrievable from cookie
+        console.log('Token in cookie after login:', authCookies.getAuthToken());
       }
 
       setUser(authResponse.user);
@@ -725,6 +751,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshToken,
     loginWithPassword,
+    getTokenFromCookie,
     loading,
   };
 

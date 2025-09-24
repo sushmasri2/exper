@@ -90,9 +90,6 @@ export function CourseGridCard({
             <p className="text-gray-900">{course.duration}</p>
           </div>
           <div className="bg-blue-50 p-3 rounded-lg flex items-center gap-2">
-            <h4 className="font-semibold flex items-center gap-2 text-sm text-gray-700">
-              Price
-            </h4>
             <div className="flex items-baseline gap-3">
               <span className="text-xl font-bold text-gray-900 flex items-center">
                 <IndianRupee size={16} />

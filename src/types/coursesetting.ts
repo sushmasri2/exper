@@ -17,6 +17,8 @@ export interface CourseSetting {
     w_week: number;
     w_days: string;
     d_days: number;
+    accreditation: string;
+
     extendedvalidity_years: number;
     extendedvalidity_months: number;
     extendedvalidity_days: number;
@@ -32,7 +34,7 @@ export interface CourseSetting {
     what_you_will_learn: string;
     course_demo_url: string;
     course_demo_mobile_url: string;
-    children_course: unknown;
+    children_course: string | null;
     is_kyc_required: number;
     banner_alt_tag: string;
     enable_contact_programs: number;
