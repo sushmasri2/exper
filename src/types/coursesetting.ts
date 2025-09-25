@@ -18,7 +18,6 @@ export interface CourseSetting {
     w_days: string;
     d_days: number;
     accreditation: string;
-
     extendedvalidity_years: number;
     extendedvalidity_months: number;
     extendedvalidity_days: number;
@@ -46,6 +45,7 @@ export interface CourseSetting {
     speciality_courses_ordering: number;
     disclosure: string;
     summary: string;
+    speciality_type: string;
     created_at: string;
     updated_at: string;
 }

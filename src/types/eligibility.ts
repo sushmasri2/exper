@@ -10,3 +10,17 @@ export interface Eligibility {
 }   
 
 
+export interface CourseEligibilityResponse {
+  status: string;
+  data: {
+    course_uuid: string;
+    eligibilities: {
+      id: number;
+      eligibility_uuid: string;
+      eligibility_name: string;
+      eligibility_status: number;
+      created_at: string;
+      updated_at: string;
+    }[];
+  };
+}

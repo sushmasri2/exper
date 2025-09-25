@@ -2,9 +2,6 @@ export interface Course {
   id: number;
   uuid: string;
   category_id: number; // foreign key -> course_categories.id
-  master_course_id: number | null;
-  parent_course_cas_id: number | null;
-  master_course_type: string | null;
   course_code: string;
   short_code: string;
   course_name: string;

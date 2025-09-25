@@ -335,7 +335,13 @@ function LoginContent() {
   // Get input type hint
   const getInputTypeHint = () => {
     if (!identifier) return null;
-
+    // In password mode, only show error for invalid
+    if (loginMode === 'password') {
+      return detectedType === 'invalid' ? (
+        <span className={styles.inputHintError}>⚠️ Invalid email or mobile format</span>
+      ) : null;
+    }
+    // In OTP mode, show hints as before
     if (detectedType === 'email') {
       return <span className={styles.inputHint}>🔒 An OTP will be sent to your provided Email Address</span>;
     } else if (detectedType === 'mobile') {

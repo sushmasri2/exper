@@ -160,26 +160,18 @@ export async function getCourseInstructorLinks(courseUuid: string): Promise<Cour
     }
 }
 
-/**
- * Link instructors to a course
- * @param courseUuid The UUID of the course
- * @param instructorUuids Array of instructor UUIDs to link to the course
- * @returns Promise<boolean> Success status
- */
-export async function linkInstructorsToCourse(courseUuid: string, instructorUuids: string[]): Promise<boolean> {
+export async function UpdatecourseInstructors(courseUuid: string, instructors: string[]): Promise<CourseInstructorLink[]> {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
-        const fullUrl = `${baseUrl}/api/instructors-linking/course/${courseUuid}`;
-
+        const fullUrl = `${baseUrl}/api/instructors-linking/course/${courseUuid}/`;
         const response = await fetchWithHeaders(fullUrl, {
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ instructor_uuids: instructorUuids }),
+            body: JSON.stringify({ instructors }),
         });
-
         if (!response.ok) {
             const errorText = await response.text();
             console.log('Error Response:', errorText);
@@ -187,11 +179,27 @@ export async function linkInstructorsToCourse(courseUuid: string, instructorUuid
         }
 
         const result = await response.json();
-        return result.success !== undefined ? result.success : true;
+        // Handle different possible response structures
+        let updatedLinks: CourseInstructorLink[] = [];
+        if (result.status === "success" && result.data && Array.isArray(result.data)) {
+            updatedLinks = result.data;
+        }
+        else if (result.success !== undefined && !result.success) {
+            throw new Error(result.message || 'Failed to update instructor links');
+        } else if (result.data && Array.isArray(result.data)) {
+            updatedLinks = result.data;
+        }
+        else if (Array.isArray(result)) {
+            updatedLinks = result;
+        }
+        else {
+            throw new Error('Unexpected response structure while updating instructor links');
+        }
+        return updatedLinks;
     } catch (error) {
-        console.error('Error linking instructors to course:', error);
+        console.error('Error updating course instructors:', error);
         if (error instanceof TypeError && error.message.includes('fetch')) {
-            throw new Error('Network error: Unable to connect to the instructor linking API');
+            throw new Error('Network error: Unable to connect to the API');
         }
         throw error;
     }
