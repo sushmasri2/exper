@@ -1,6 +1,9 @@
 export interface Specialty {
   id: number;
+  uuid: string;
+  speciality_image: string;
   name: string;
+  position: number;
   description?: string;
   created_at?: string;
   updated_at?: string;

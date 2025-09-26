@@ -108,7 +108,7 @@ export async function getCourseEligibilities(courseUuid: string): Promise<Eligib
         course_id: result.data.course_uuid,
         eligibility_criteria: '', // Not provided in response
         created_at: item.created_at,
-        updated_at: item.updated_at
+        updated_at: item.updated_at,
       }));
     } else {
       console.warn('Unexpected course eligibilities response structure:', result);

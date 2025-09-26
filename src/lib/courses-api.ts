@@ -55,7 +55,7 @@ export async function getCourses(): Promise<Course[]> {
     throw error;
   }
 }
-export async function getCourseUpdate(courseUuid: string): Promise<Course> {
+export async function UpdateCourse(courseUuid: string): Promise<Course> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
     if (!baseUrl) {

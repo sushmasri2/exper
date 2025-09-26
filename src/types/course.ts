@@ -12,12 +12,12 @@ export interface Course {
   description: string;
   course_type_id: number; // foreign key -> course_type.id
   parent_version_id: number | null;
-  version: number;
+  version: string;
   seo_title: string;
   seo_description: string;
   seo_url: string;
   sem_url: string;
-  kite_id: string | null;
+  kite_id: string;
   course_zoho_id: string | null;
   cpd_points: number;
   active_learners: number;

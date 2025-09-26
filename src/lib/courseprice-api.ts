@@ -65,3 +65,25 @@ export async function getCoursePricing(courseUuid: string): Promise<CoursePricin
     throw error;
   }
 }
+
+export async function updateCoursePricing(courseUuid: string, pricingData: Partial<CoursePricing>[]): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
+    const fullUrl = `${baseUrl}/api/courses/${courseUuid}/pricing`; 
+    const response = await fetchWithHeaders(fullUrl, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },  
+      body: JSON.stringify({ pricing: pricingData }),
+    }); 
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) { 
+    console.error('Error updating course pricing:', error); 
+    throw error;
+  } 
+
+}

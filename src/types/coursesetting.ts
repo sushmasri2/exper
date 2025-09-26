@@ -21,7 +21,6 @@ export interface CourseSetting {
     extendedvalidity_years: number;
     extendedvalidity_months: number;
     extendedvalidity_days: number;
-    accreditation_partners: string;
     brochure: string;
     cohert_learning_image: string;
     cohert_learning_overview: string;

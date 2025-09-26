@@ -4,15 +4,16 @@ export interface Instructor {
   first_name?: string;
   last_name?: string;
   name?: string; // For backward compatibility
-  email?: string;
   bio?: string;
   description?: string;
   m_image_url?: string;
   profile_image?: string;
   designation?: string;
   position?: number;
-  experience_years?: number;
-  specialization?: string;
+  biography?: string;
+  publications?: string;
+  affiliations_memberships?: string;
+  disclosure?: string;
   rating?: string;
   status?: number;
   created_at?: string;
