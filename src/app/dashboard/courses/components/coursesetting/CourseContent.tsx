@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Course } from "@/types/course";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
-import { ValidatedTextarea } from "./ValidatedFormComponents";
+import { ValidatedTextarea } from "../ValidatedFormComponents";
 
 interface CourseContentProps {
     courseData?: Course | null;

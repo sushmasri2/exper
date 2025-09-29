@@ -9,8 +9,11 @@ import {
     hasFieldError,
     courseValidationRules,
     courseSettingValidationRules,
-    validateField
+    validateField,
+    coursePriceValidationRules,
+    courseSEOValidationRules,
 } from '../utils/validation';
+import { CoursePricing } from '@/types/course-pricing';
 
 export interface ValidationState {
     getFieldError(arg0: string): string | null | undefined;
@@ -64,7 +67,7 @@ export function useFormValidation(): [ValidationState, ValidationActions] {
         fieldName: string,
         value: unknown
     ): ValidationError | null => {
-        const rules = courseSettingValidationRules[fieldName as keyof CourseSetting] || courseValidationRules[fieldName as keyof Course];
+        const rules = courseSettingValidationRules[fieldName as keyof CourseSetting] || courseValidationRules[fieldName as keyof Course] || coursePriceValidationRules[fieldName as keyof CoursePricing] || courseSEOValidationRules[fieldName as keyof Course];
 
         if (!rules) {
             return null;

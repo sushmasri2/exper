@@ -3,7 +3,7 @@
 import Select2 from "@/components/ui/Select2";
 import { Course } from "@/types/course";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
-import { ValidatedInput, ValidatedTextarea } from "./ValidatedFormComponents";
+import { ValidatedInput, ValidatedTextarea } from "../ValidatedFormComponents";
 import { Input } from "@/components/ui/input";
 
 interface CourseInformationProps {
@@ -48,6 +48,7 @@ export default function CourseInformation({
                 <div>
                     <ValidatedInput
                         type="text"
+                        name="course_name"
                         label="Course Card Title"
                         placeholder="Course Title"
                         value={typeof formData.course_name === "string" ? formData.course_name : (courseData?.course_name || "")}
@@ -195,6 +196,7 @@ export default function CourseInformation({
 
             <div className="mb-4">
                 <ValidatedTextarea
+                    name="one_line_description"
                     label="One Line Description"
                     placeholder="One line description of the course"
                     value={typeof formData.one_line_description === "string" ? formData.one_line_description : (courseData?.one_line_description || "")}
@@ -210,6 +212,7 @@ export default function CourseInformation({
 
             <div className="mb-4">
                 <ValidatedTextarea
+                    name="description"
                     label="Description"
                     placeholder="Course description"
                     value={typeof formData.description === "string" ? formData.description : (courseData?.description || "")}
@@ -225,6 +228,7 @@ export default function CourseInformation({
 
             <div className="mb-4">
                 <ValidatedTextarea
+                    name="summary"
                     label="Course Summary"
                     placeholder="Course summary"
                     value={typeof formData.summary === "string" ? formData.summary : (courseSettings?.summary || "")}

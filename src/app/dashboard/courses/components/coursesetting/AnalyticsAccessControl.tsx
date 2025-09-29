@@ -3,7 +3,7 @@
 import Select2 from "@/components/ui/Select2";
 import { Course } from "@/types/course";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
-import { ValidatedInput } from "./ValidatedFormComponents";
+import { ValidatedInput } from "../ValidatedFormComponents";
 
 interface AnalyticsAccessControlProps {
     courseData?: Course | null;
@@ -24,11 +24,11 @@ export default function AnalyticsAccessControl({
         specialities,
         courseSettings,
         selectedIntendedAudiences,
-        validation: validationActions
     } = data;
 
     const {
-        setSelectedIntendedAudiences
+        setSelectedIntendedAudiences,
+        validation: validationActions
     } = actions;
 
     return (

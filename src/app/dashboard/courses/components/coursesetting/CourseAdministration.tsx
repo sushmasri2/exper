@@ -3,7 +3,7 @@
 import Select2 from "@/components/ui/Select2";
 import { Course } from "@/types/course";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
-import { ValidatedInput } from "./ValidatedFormComponents";
+import { ValidatedInput } from "../ValidatedFormComponents";
 
 interface CourseAdministrationProps {
     formData: Partial<Course>;
@@ -211,9 +211,9 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                     {currentSchedule === 'daily' && (
                         <>
                             <p className="text-sm text-gray-600 mb-3">Adding 2 days here, will repeat the Course every 2 days until the end date.</p>
-                            <label className="block text-lg font-medium mb-2">Number of Days</label>
                             <ValidatedInput
                                 className="px-3 py-2 max-w-xs"
+                                label="Number of Days"
                                 value={typeof formData.d_days === 'string' ? formData.d_days : (courseSettings?.d_days ?? "")}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     const value = e.target.value;
@@ -230,9 +230,9 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                             <p className="text-sm text-gray-600 mb-3">Adding 2 Week & Selecting Monday, Tuesday here, will repeat the Course every 2 weeks on Monday Tuesday until the end date.</p>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-lg font-medium mb-2">Number of Weeks</label>
                                     <ValidatedInput
                                         className="px-3 py-2"
+                                        label="Number of Weeks"
                                         value={typeof formData.w_week === 'string' ? formData.w_week : (courseSettings?.w_week ?? "")}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                             const value = e.target.value;
