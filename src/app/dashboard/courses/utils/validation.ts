@@ -154,6 +154,13 @@ export const courseSEOValidationRules: Record<string, FieldValidationRule> = {
     sem_url: rule({ pattern: patterns.url, maxLength: 255 }),
 };
 
+export const coursePatronValidationRules: Record<string, FieldValidationRule> = {
+    name: rule({ required: true, minLength: 2, maxLength: 255 }),
+    designation: rule({ required: true, minLength: 2, maxLength: 255 }),
+    image: rule({ required: true, maxLength: 500, custom: validators.imageFormat }),
+};
+
+
 // Helper to format field names
 const formatFieldName = (fieldName: string) =>
     fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

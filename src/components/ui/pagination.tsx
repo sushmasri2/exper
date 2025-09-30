@@ -12,8 +12,8 @@ type PaginationProps = {
     hasNext: boolean;
     hasPrev: boolean;
     links: {
-      next: string;
-      prev: string;
+      next: string | null;
+      prev: string | null;
       first: string;
       last: string;
     };
@@ -39,7 +39,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
       <Button
         variant="outline"
         disabled={!pagination.hasPrev}
-        onClick={() => onPageChange(pagination.links.prev, pagination.page - 1)}
+        onClick={() => pagination.links.prev && onPageChange(pagination.links.prev, pagination.page - 1)}
       >
         Prev
       </Button>
@@ -53,7 +53,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
       <Button
         variant="outline"
         disabled={!pagination.hasNext}
-        onClick={() => onPageChange(pagination.links.next, pagination.page + 1)}
+        onClick={() => pagination.links.next && onPageChange(pagination.links.next, pagination.page + 1)}
       >
         Next
       </Button>

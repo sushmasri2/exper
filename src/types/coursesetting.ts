@@ -10,7 +10,7 @@ export interface CourseSetting {
     duration_days: number;
     schedule: string;
     end_date: string | null;
-    y_month: number;
+    y_month: number ;
     y_day: number;
     m_month: number;
     m_day: number;
@@ -43,7 +43,7 @@ export interface CourseSetting {
     partner_coursecode: string;
     speciality_courses_ordering: number;
     disclosure: string;
-    summary: string;
+    summary: string | null;
     speciality_type: string;
     created_at: string;
     updated_at: string;

@@ -18,7 +18,7 @@ import { CoursePricing } from '@/types/course-pricing';
 export interface ValidationState {
     getFieldError(arg0: string): string | null | undefined;
     validateSingleField: (fieldName: string, value: unknown) => ValidationError | null;
-    errors: ValidationError[];
+    errors: ValidationError[]; 
     isValidating: boolean;
     isValid: boolean;
 }

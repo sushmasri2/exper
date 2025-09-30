@@ -17,6 +17,7 @@ interface CourseRecommendedProps {
 export default function RecommendedCourses({ courseData }: CourseRecommendedProps) {
     const [recommendedCourses, setRecommendedCourses] = useState<RecommendedCourse[]>([]);
     const [availableCourses, setAvailableCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
     useEffect(() => {
         async function fetchData() {
             try {
@@ -26,12 +27,15 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
                 console.log(courses);
                 // Fetch recommended courses if courseData is available
                 if (courseData && courseData.uuid) {
-                    const recommendedCourses = await getRecommendedCourse(courseData.uuid);  
+                    const recommendedCourses = await getRecommendedCourse(courseData.uuid);
                     setRecommendedCourses(recommendedCourses);
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
-            }   
+            }
+            finally {
+                setLoading(false);
+            }
         }
         fetchData();
     }, [courseData]);
@@ -42,9 +46,9 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
         if (!selectedCourse) return;
 
         // Update the recommended courses list
-        setRecommendedCourses(prev => 
-            prev.map(rec => 
-                rec.id === recommendationId 
+        setRecommendedCourses(prev =>
+            prev.map(rec =>
+                rec.id === recommendationId
                     ? {
                         ...rec,
                         recomended_course_id: selectedCourse.id,
@@ -60,6 +64,8 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
             )
         );
     };
+        if (loading) return <div>Loading...</div>;
+
     return <div>
         {recommendedCourses.length > 0 ? (
             <Table
@@ -95,15 +101,15 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
                         header: "Position",
                         accessor: "position",
                         render: (value: unknown, row: RecommendedCourse) => (
-                            <Input 
-                                type="number" 
-                                value={value as number} 
-                                className="w-16" 
+                            <Input
+                                type="number"
+                                value={value as number}
+                                className="w-16"
                                 onChange={(e) => {
                                     const newPosition = parseInt(e.target.value);
-                                    setRecommendedCourses(prev => 
-                                        prev.map(rec => 
-                                            rec.id === row.id 
+                                    setRecommendedCourses(prev =>
+                                        prev.map(rec =>
+                                            rec.id === row.id
                                                 ? { ...rec, position: newPosition }
                                                 : rec
                                         )
@@ -121,9 +127,9 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
                                     type="checkbox"
                                     checked={Boolean(value)}
                                     onChange={(e) => {
-                                        setRecommendedCourses(prev => 
-                                            prev.map(rec => 
-                                                rec.id === row.id 
+                                        setRecommendedCourses(prev =>
+                                            prev.map(rec =>
+                                                rec.id === row.id
                                                     ? { ...rec, must_have: e.target.checked ? 1 : 0 }
                                                     : rec
                                             )
@@ -131,12 +137,10 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
                                     }}
                                     className="sr-only"
                                 />
-                                <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                                    Boolean(value) ? 'bg-blue-600' : 'bg-gray-200'
-                                }`}>
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        Boolean(value) ? 'translate-x-6' : 'translate-x-1'
-                                    }`} />
+                                <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${Boolean(value) ? 'bg-blue-600' : 'bg-gray-200'
+                                    }`}>
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${Boolean(value) ? 'translate-x-6' : 'translate-x-1'
+                                        }`} />
                                 </div>
                             </label>
                         ),
@@ -147,7 +151,7 @@ export default function RecommendedCourses({ courseData }: CourseRecommendedProp
                         render: (value: unknown) => ((value as boolean) ? "Active" : "Inactive"),
                     },
                     {
-                        header:"Actions",
+                        header: "Actions",
                         accessor: "actions",
                         render: () => (
                             <Button><Trash2 color="red" /></Button>
