@@ -13,6 +13,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const REFRESH_THRESHOLD_MS = 60 * 60 * 1000; // 1 hour
 
 /**
+ * Cache threshold in milliseconds (24 hours)
+ * Prevents token refresh from running too frequently
+ * This addresses the issue where token refresh was running on every request
+ */
+const REFRESH_CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
  * Interface for refresh token response
  */
 interface RefreshTokenResponse {
@@ -31,6 +38,14 @@ interface RefreshTokenResponse {
 }
 
 /**
+ * Interface for token refresh cache
+ */
+interface TokenRefreshCache {
+  lastRefreshTime: number;
+  tokenExpiration?: number;
+}
+
+/**
  * Flag to track if a token refresh is in progress
  */
 let isRefreshing = false;
@@ -39,6 +54,74 @@ let isRefreshing = false;
  * Queue of callbacks to be called after token refresh
  */
 let refreshCallbackQueue: Array<(token: string) => void> = [];
+
+/**
+ * Key for storing token refresh cache in sessionStorage
+ */
+const TOKEN_REFRESH_CACHE_KEY = 'medai_token_refresh_cache';
+
+/**
+ * Cache management utilities for token refresh
+ */
+const refreshCache = {
+  /**
+   * Get the current refresh cache
+   */
+  get(): TokenRefreshCache | null {
+    if (typeof window === 'undefined') return null;
+
+    try {
+      const cached = sessionStorage.getItem(TOKEN_REFRESH_CACHE_KEY);
+      if (!cached) return null;
+
+      return JSON.parse(cached) as TokenRefreshCache;
+    } catch (error) {
+      console.error('Error reading token refresh cache:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Set the refresh cache with current timestamp
+   */
+  set(tokenExpiration?: number): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const cache: TokenRefreshCache = {
+        lastRefreshTime: Date.now(),
+        tokenExpiration
+      };
+      sessionStorage.setItem(TOKEN_REFRESH_CACHE_KEY, JSON.stringify(cache));
+    } catch (error) {
+      console.error('Error setting token refresh cache:', error);
+    }
+  },
+
+  /**
+   * Clear the refresh cache
+   */
+  clear(): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      sessionStorage.removeItem(TOKEN_REFRESH_CACHE_KEY);
+    } catch (error) {
+      console.error('Error clearing token refresh cache:', error);
+    }
+  },
+
+  /**
+   * Check if a refresh was performed recently (within cache duration)
+   */
+  isRecentlyRefreshed(): boolean {
+    const cache = this.get();
+    if (!cache) return false;
+
+    const timeSinceLastRefresh = Date.now() - cache.lastRefreshTime;
+    return timeSinceLastRefresh < REFRESH_CACHE_DURATION_MS;
+  }
+};
 
 /**
  * Decodes a JWT token to get its payload
@@ -62,11 +145,17 @@ function decodeJwtToken(token: string): { exp?: number } | null {
 
 /**
  * Checks if the token is approaching expiration (within refresh threshold)
+ * and if a refresh hasn't been performed recently
  * @param token JWT token string
  * @returns True if token needs refresh, false otherwise
  */
 function shouldRefreshToken(token: string): boolean {
   try {
+    // First check if we recently refreshed the token
+    if (refreshCache.isRecentlyRefreshed()) {
+      return false;
+    }
+
     const payload = decodeJwtToken(token);
     if (!payload || !payload.exp) return false;
 
@@ -76,7 +165,14 @@ function shouldRefreshToken(token: string): boolean {
     const timeUntilExpiration = expirationTime - currentTime;
 
     // Check if token will expire within the threshold
-    return timeUntilExpiration <= REFRESH_THRESHOLD_MS;
+    const needsRefresh = timeUntilExpiration <= REFRESH_THRESHOLD_MS;
+
+    // Additional safety check: if token expires within the next 10 minutes,
+    // refresh regardless of cache (emergency refresh)
+    const emergencyThreshold = 10 * 60 * 1000; // 10 minutes
+    const isEmergency = timeUntilExpiration <= emergencyThreshold;
+
+    return needsRefresh || isEmergency;
   } catch (error) {
     console.error('Error checking token expiration:', error);
     return false;
@@ -134,6 +230,13 @@ export async function refreshAccessToken(): Promise<string> {
     // We'll update the auth cookie with the new token
     authCookies.setAuthToken(data.accessToken);
 
+    // Get token expiration for cache
+    const tokenPayload = decodeJwtToken(data.accessToken);
+    const tokenExpiration = tokenPayload?.exp ? tokenPayload.exp * 1000 : undefined;
+
+    // Update the refresh cache to prevent immediate subsequent refreshes
+    refreshCache.set(tokenExpiration);
+
     // Update token in local storage - actual storage is done in auth-context.tsx
     // We just return the token here
     return data.accessToken;
@@ -142,6 +245,7 @@ export async function refreshAccessToken(): Promise<string> {
 
     // Clear any existing auth data as it's no longer valid
     authCookies.removeAuthToken();
+    refreshCache.clear();
 
     // We need to redirect to login, but since this is a utility function
     // we can't use router directly. The caller needs to handle this.
@@ -164,6 +268,7 @@ export async function fetchWithInterceptor(
 
   requestOptions.headers = new Headers(requestOptions.headers || {});
   (requestOptions.headers as Headers).set('Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
+  (requestOptions.headers as Headers).set('X-Platform', process.env.NEXT_PUBLIC_PLATFORM || 'cms');
   (requestOptions.headers as Headers).set('Accept', 'application/json');
   if (!requestOptions.headers.has('Content-Type')) {
     (requestOptions.headers as Headers).set('Content-Type', 'application/json');
@@ -184,7 +289,16 @@ export async function fetchWithInterceptor(
       console.error('Error reading token from localStorage:', e);
     }
   }
-  // Fallback to cookie if not found in localStorage
+  // Fallback to sessionStorage if not found in localStorage
+  if (!token && typeof window !== 'undefined') {
+    try {
+      token = sessionStorage.getItem('accessToken');
+    } catch (e) {
+      console.error('Error reading token from sessionStorage:', e);
+    }
+  }
+
+  // Final fallback to cookie if not found anywhere else
   if (!token) {
     token = authCookies.getAuthToken();
   }

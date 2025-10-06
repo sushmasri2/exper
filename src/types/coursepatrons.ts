@@ -23,3 +23,19 @@ export interface CoursePatronsResponse {
         patrons: CoursePatron[];
     };
 }
+
+export interface CreatePatronData {
+    name: string;
+    designation: string;
+    image: string;
+}
+
+export interface UpdatePatronData extends CreatePatronData {
+    id: number;
+}
+
+export interface PatronApiResponse {
+    status: string; 
+    message: string;
+    data?: CoursePatron;
+}

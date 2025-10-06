@@ -1,6 +1,6 @@
 "use client";
-import { CoursePatron } from "@/types/coursepatrons";
-import { getCoursesPatrons, createPatron, updatePatron, deletePatron, UpdatePatronData } from "@/lib/coursepatrons-api";
+import { CoursePatron, UpdatePatronData } from "@/types/coursepatrons";
+import { getCoursesPatrons, createPatron, updatePatron, deletePatron } from "@/lib/coursepatrons-api";
 import { Course } from "@/types/course";
 import { useEffect, useState } from "react";
 import Table from "@/components/ui/table";
@@ -89,8 +89,8 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                 const response = await updatePatron(courseData.uuid, updateData);
                 if (response.status === 'success') {
                     // Update the patron in the list
-                    setPatrons(prev => prev.map(p => 
-                        p.id === editingPatron.id 
+                    setPatrons(prev => prev.map(p =>
+                        p.id === editingPatron.id
                             ? { ...p, ...formData }
                             : p
                     ));
@@ -132,7 +132,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
 
     const handleDelete = async (patron: CoursePatron) => {
         if (!courseData?.uuid) return;
-        
+
         if (confirm(`Are you sure you want to delete ${patron.name}?`)) {
             try {
                 const response = await deletePatron(courseData.uuid, patron.id);
@@ -158,7 +158,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Course Patrons</h3>
-                <Button onClick={handleAddNew} variant="courseCreate">
+                <Button onClick={handleAddNew} variant="primaryBtn">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Patron
                 </Button>
@@ -169,7 +169,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                     <h4 className="text-md font-semibold mb-4">
                         {editingPatron ? 'Edit Patron' : 'Add New Patron'}
                     </h4>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="text-md font-semibold text-gray-600">Patron Name</label>
@@ -182,7 +182,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                                 className={validationActions.hasFieldError('name') ? 'border-red-500' : ''}
                             />
                         </div>
-                        
+
                         <div>
                             <label className="text-md font-semibold text-gray-600">Designation</label>
                             <ValidatedInput
@@ -194,7 +194,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                                 className={validationActions.hasFieldError('designation') ? 'border-red-500' : ''}
                             />
                         </div>
-                        
+
                         <div>
                             <label className="text-md font-semibold text-gray-600">Image URL</label>
                             <ValidatedInput
@@ -212,9 +212,9 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                         <Button onClick={handleCancel} variant="outline">
                             Cancel
                         </Button>
-                        <Button 
-                            onClick={handleSubmit} 
-                            variant="courseCreate"
+                        <Button
+                            onClick={handleSubmit}
+                            variant="primaryBtn"
                             disabled={submitting}
                         >
                             {submitting ? 'Saving...' : (editingPatron ? 'Update' : 'Create')}
@@ -263,15 +263,15 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
                             accessor: "actions",
                             render: (value: unknown, row: CoursePatron) => (
                                 <div className="flex space-x-2">
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         variant="outline"
                                         onClick={() => handleEdit(row)}
                                     >
                                         <Edit className="w-4 h-4" />
                                     </Button>
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         variant="outline"
                                         onClick={() => handleDelete(row)}
                                     >
@@ -286,7 +286,7 @@ export default function Patrons({ courseData }: CoursePatronsProps) {
             ) : (
                 <div className="text-center py-8">
                     <p className="text-gray-500">No patrons available for this course.</p>
-                    <Button onClick={handleAddNew} variant="courseCreate" className="mt-4">
+                    <Button onClick={handleAddNew} variant="primaryBtn" className="mt-4">
                         <Plus className="w-4 h-4 mr-2" />
                         Add First Patron
                     </Button>

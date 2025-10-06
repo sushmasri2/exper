@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Course } from "@/types/course";
 import { getCourses } from "@/lib/courses-api"; // Add this import
+import { useApiCache } from "@/hooks/use-api-cache";
+import { setGlobalCacheInstance } from "@/lib/cache-utils";
 
 // Import tab content components
 import CourseStructure from "./coursestructure";
@@ -31,6 +33,12 @@ const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "r
 export default function CreateCourse() {
   const router = useRouter();
   const pathname = usePathname();
+  const cacheInstance = useApiCache();
+  const { cachedApiCall } = cacheInstance;
+
+  // Set global cache instance for API functions to use
+  setGlobalCacheInstance(cacheInstance);
+
   // Extract tab from path: /dashboard/courses/[tab]
   const pathSegments = pathname.split("/");
   const tabSegment = pathSegments[pathSegments.length - 1] || "courseStructure";
@@ -54,7 +62,8 @@ export default function CreateCourse() {
 
   useEffect(() => {
     if (!courseId) return;
-    getCourses()
+
+    cachedApiCall(() => getCourses(), { cacheKey: 'courses' })
       .then(courses => {
         const course = courses.find(c => c.id === courseId) || null;
         setCourseData(course);
@@ -62,7 +71,7 @@ export default function CreateCourse() {
       .catch(error => {
         console.error("Error fetching courses:", error);
       });
-  }, [courseId]);
+  }, [courseId, cachedApiCall]);
   const handleTabChange = (value: string) => {
     let newUrl;
     if (courseId) {

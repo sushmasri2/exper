@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Course } from "@/types/course";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { useCourseSettingsData } from "./hooks/useCourseSettingsData";
 import { ValidationError } from "./utils/validation";
 import CourseInformation from "./components/coursesetting/CourseInformation";
@@ -29,7 +30,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
     ];
 
     const [openItems, setOpenItems] = useState<string[]>([]);
-    const [formData, setFormData] = useState<Partial<Course>>({
+    const [formData, setFormData] = useState<CourseSettingsPartialFormData>({
         ...courseData,
     });
 
@@ -46,7 +47,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
     };
 
     const handleInputChange = (
-        field: keyof Course,
+        field: keyof CourseSettingsPartialFormData,
         value: string | number | boolean | string[]
     ) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -87,7 +88,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
         const firstError = errors[0];
         const accordionSection = fieldToAccordionMap[firstError.field];
-        
+
         if (accordionSection) {
             // Expand the accordion section if it's not already open
             if (!openItems.includes(accordionSection)) {
@@ -99,11 +100,11 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                 const fieldElement = document.querySelector(`[name="${firstError.field}"], [id="${firstError.field}"]`) as HTMLElement;
                 if (fieldElement) {
                     fieldElement.focus();
-                    fieldElement.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'center' 
+                    fieldElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
                     });
-                    
+
                     // Add a visual highlight effect
                     fieldElement.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.5)';
                     setTimeout(() => {
@@ -116,30 +117,30 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
     // Handle publish/update course button click
     const handlePublishUpdate = () => {
-        
+
         // Validate all form data
         const validationResult = actions.validation.validateForm(formData, data.courseSettings || undefined);
-        
+
         if (!validationResult.isValid) {
             console.error("Validation failed with errors:", validationResult.errors);
-            
+
             // Focus on first error field
             focusOnFirstError(validationResult.errors);
-            
+
             // Display error summary in console for debugging
             console.log("Validation errors by field:");
             validationResult.errors.forEach(error => {
                 console.log(`- ${error.field}: ${error.message}`);
             });
-            
+
             return;
         }
-        
+
         // If validation passes, show success message
         console.log("✅ Validation passed! Course data is valid.");
         console.log("Form data:", formData);
         console.log("Course settings:", data.courseSettings);
-        
+
         // Here you would typically call the API to save/update the course
         // For now, just log success
         if (!courseData) {
@@ -227,6 +228,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
                     </AccordionTrigger>
                     <AccordionContent>
                         <CourseAdministration
+                            courseData={courseData}
                             formData={formData}
                             data={data}
                             actions={actions}
@@ -268,9 +270,9 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
             <div className="flex justify-end">
                 <Button className="mt-4" variant="secondary">Save as Draft</Button>
-                <Button 
-                    className="mt-4 ml-2" 
-                    variant="courseCreate"
+                <Button
+                    className="mt-4 ml-2"
+                    variant="primaryBtn"
                     onClick={handlePublishUpdate}
                 >
                     {!courseData ? "Publish Course" : "Update Course"}

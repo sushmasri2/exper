@@ -1,38 +1,64 @@
 "use client";
 
 import { Course } from "@/types/course";
-import { CourseCategory } from "@/types/coursecategory";
-import { CourseType } from "@/types/coursetype";
-import { CoursePricing } from "@/types/course-pricing";
 import { Button } from "@/components/ui/button";
 import { Edit, Eye, Trash2 } from "lucide-react";
 import Table from "@/components/ui/table";
 import Link from "next/link";
+import { Modal } from "@/components/ui/modal";
+import { DeleteCourse } from "@/lib/courses-api";
+import { useState } from "react";
+import { showToast } from "@/lib/toast";
 
 interface CourseTableViewProps {
   courses: Course[];
-  courseCategoryList: CourseCategory[];
-  courseTypeList: CourseType[];
-  pricingMap: Record<string, CoursePricing[]>;
   onSort: (accessor: string, direction: 'asc' | 'desc') => void;
+  onCourseDeleted?: () => void;
 }
 
 export function CourseTableView({
   courses,
-  courseCategoryList,
-  courseTypeList,
-  pricingMap,
-  onSort
+  onSort,
+  onCourseDeleted
 }: CourseTableViewProps) {
-  const formatPrice = (price?: number | string) => {
-    if (!price) return "-";
-    const num = Number(price);
-    return Number.isInteger(num) ? num : num.toFixed(2);
-  };
-
   const statusColor: Record<string, string> = {
     active: "bg-green-100 text-green-800",
     inactive: "bg-red-100 text-red-800",
+  };
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+
+  const openDeleteModal = (course: Course) => {
+    setCourseToDelete(course);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setCourseToDelete(null);
+  };
+
+  const handleDelete = (course: Course) => {
+    return (event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openDeleteModal(course);
+    };
+  };
+
+  const confirmDelete = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      await DeleteCourse(courseToDelete.uuid);
+      closeDeleteModal();
+      showToast(`Course "${courseToDelete.course_name}" has been deleted.`, "success" );
+      onCourseDeleted?.(); // Refresh the course list
+    } catch (error) {
+      console.error('Failed to delete course:', error);
+      showToast(`Failed to delete course. Please try again.`, "error");
+    }
   };
 
   return (
@@ -56,20 +82,14 @@ export function CourseTableView({
           },
           {
             header: "Category",
-            accessor: "category_id",
-            render: (value) => {
-              const category = courseCategoryList.find(cat => cat.id === value);
-              return category ? category.name : "-";
-            }
+            accessor: "category_name",
+            render: (value) => String(value) || "-"
           },
           {
             header: "Course Type",
-            accessor: "course_type_id",
+            accessor: "type_name",
             sortable: true,
-            render: (value) => {
-              const type = courseTypeList.find(t => t.id === value);
-              return type ? type.name : "-";
-            }
+            render: (value) => String(value) || "-"
           },
           {
             header: "Duration",
@@ -81,7 +101,7 @@ export function CourseTableView({
             sortable: true,
             render: (_value, row) => (
               <span>
-                {formatPrice(pricingMap[row.id]?.find(p => p.currency === "INR")?.price)}
+                {row.pricing.find(p => p.currency_code === "INR")?.formatted_price || "-"}
               </span>
             )
           },
@@ -91,7 +111,7 @@ export function CourseTableView({
             sortable: true,
             render: (_value, row) => (
               <span>
-                {formatPrice(pricingMap[row.id]?.find(p => p.currency === "USD")?.price)}
+                {row.pricing.find(p => p.currency_code === "USD")?.formatted_price || "-"}
               </span>
             )
           },
@@ -123,7 +143,7 @@ export function CourseTableView({
                     <Edit size={18} />
                   </Button>
                 </Link>
-                <Button className="p-2 bg-gray-100 hover:bg-red-50 rounded-lg text-red-600">
+                <Button className="p-2 bg-gray-100 hover:bg-red-50 rounded-lg text-red-600" onClick={handleDelete(row)}>
                   <Trash2 size={18} />
                 </Button>
               </div>
@@ -132,6 +152,19 @@ export function CourseTableView({
         ]}
         data={courses}
         onSort={onSort}
+      />
+      <Modal
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+        type="confirmation"
+        variant="delete"
+        title="Delete Course"
+        message={`Are you sure you want to delete the course "${courseToDelete?.course_name || ''}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteModal}
+        destructive={true}
       />
     </div>
   );

@@ -1,35 +1,88 @@
+export interface CoursePricing {
+  uuid: string;
+  currency: string;
+  currency_code: string;
+  price: number;
+  striked_price: number;
+  formatted_price: string;
+  formatted_striked_price: string | null;
+  extended_validity_price: number;
+  major_update_price: number;
+  future_price_effect_from: string | null;
+}
+
 export interface Course {
   id: number;
   uuid: string;
-  category_id: number; // foreign key -> course_categories.id
-  course_code: string;
   short_code: string;
   course_name: string;
   title: string;
   course_card_title: string;
   one_line_description: string;
-  short_description: string;
-  description: string;
-  course_type_id: number; // foreign key -> course_type.id
-  parent_version_id: number | null;
+  short_description: string | null;
+  description: string | null;
+  duration: string;
+  category_id: number;
+  course_type_id: number;
+  category_name: string;
+  location: string | null;
+  status: number;   // 1 = active, 0 = inactive
   version: string;
+  no_price: number; // 1 = free, 0 = paid
+  type_name: string;
   seo_title: string;
-  seo_description: string;
+  seo_description: string | null;
   seo_url: string;
   sem_url: string;
-  kite_id: string;
-  course_zoho_id: string | null;
-  cpd_points: number;
-  active_learners: number;
-  rating_count: number;
-  rating: number;
-  no_price: number; // 1 = free, 0 = paid
-  status: number;   // 1 = active, 0 = inactive
-  created_at: string; // ISO date string
-  updated_at: string; // ISO date string
-  priceruppees: number;
-  pricedollars: number;
-  duration: string;
+  pricing: CoursePricing[];
   [key: string]: unknown; // Add index signature to satisfy Record<string, unknown>
 }
 
+export interface PaginatedCoursesResponse {
+  data: Course[];
+  pagination: {
+    total: number;
+    totalPages: number;
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+    links: {
+      next: string | null;
+      prev: string | null;
+      first: string;
+      last: string;
+    };
+  };
+}
+
+export interface CoursesFilterParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  courseType?: string;
+}
+
+// Validation error types
+export interface ValidationError {
+    field: string;
+    message: string;
+    type: 'required' | 'format' | 'length' | 'range' | 'custom';
+}
+
+export interface ValidationResult {
+    isValid: boolean;
+    errors: ValidationError[];
+}
+
+// Field validation rules
+export interface FieldValidationRule {
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    pattern?: RegExp;
+    min?: number;
+    max?: number;
+    custom?: (value: unknown) => string | null;
+}

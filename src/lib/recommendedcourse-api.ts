@@ -1,9 +1,9 @@
 import {RecommendedCourse, RecommendedCourseResponse} from "@/types/recommendedcourses";
 import { fetchWithHeaders } from "./api-client";
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 export async function getRecommendedCourse(courseUuid: string): Promise<RecommendedCourse[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-recommended/course/${courseUuid}/`;
 
         const response = await fetchWithHeaders(fullUrl, {

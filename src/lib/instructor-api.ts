@@ -7,7 +7,6 @@ import { fetchWithHeaders } from './api-client';
  */
 export async function getCourseInstructors(): Promise<Instructor[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         const fullUrl = `${baseUrl}/api/course-instructors`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -99,9 +98,10 @@ export async function getCourseInstructors(): Promise<Instructor[]> {
  * @param courseUuid The UUID of the course
  * @returns Promise<CourseInstructorLink[]> Array of instructor links for the course
  */
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
+
 export async function getCourseInstructorLinks(courseUuid: string): Promise<CourseInstructorLink[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         const fullUrl = `${baseUrl}/api/instructors-linking/course/${courseUuid}`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -162,7 +162,6 @@ export async function getCourseInstructorLinks(courseUuid: string): Promise<Cour
 
 export async function UpdatecourseInstructors(courseUuid: string, instructors: string[]): Promise<CourseInstructorLink[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         const fullUrl = `${baseUrl}/api/instructors-linking/course/${courseUuid}/`;
         const response = await fetchWithHeaders(fullUrl, {
             method: 'PUT',

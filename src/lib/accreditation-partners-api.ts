@@ -1,25 +1,11 @@
-import { AccreditationPartner } from '@/types/accreditation-partners';
+import { AccreditationPartner,CourseAccreditationPartnerItem } from '@/types/accreditation-partners';
 import { fetchWithHeaders } from './api-client';
 
-interface CourseAccreditationPartnerItem {
-  id: number;
-  course_id: number;
-  accreditation_partner_id: number;
-  status: number;
-  created_at: string;
-  updated_at: string;
-  AccreditationPartner: {
-    id: number;
-    uuid: string;
-    name: string;
-    image_url: string;
-    position: number;
-  };
-}
+ const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || ''; 
 
 export async function getAccreditationPartners(): Promise<AccreditationPartner[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
+   
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }
@@ -81,7 +67,6 @@ export async function getAccreditationPartners(): Promise<AccreditationPartner[]
 }
 export async function getCourseAccreditationPartners(courseUuid: string): Promise<AccreditationPartner[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }

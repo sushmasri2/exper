@@ -3,37 +3,31 @@
 import { Course } from "@/types/course";
 import { CourseGridCard } from "./CourseGridCard";
 import { CourseTableView } from "./CourseTableView";
-import { CourseCategory } from "@/types/coursecategory";
-import { CourseType } from "@/types/coursetype";
-import { CoursePricing } from "@/types/course-pricing";
-import Pagination from "@/components/ui/pagination";
+import Pagination from "@/components/ui/pagination2";
 
 interface CourseListProps {
   view: string;
   courses: Course[];
-  courseCategoryList: CourseCategory[];
-  courseTypeList: CourseType[];
-  pricingMap: Record<string, CoursePricing[]>;
+
   currentPage: number;
   totalPages: number;
   totalCourses: number;
   itemsPerPage: number;
   onPageChange: (url: string, page: number) => void;
   onTableSort: (accessor: string, direction: 'asc' | 'desc') => void;
+  onCourseDeleted?: () => void;
 }
 
 export function CourseList({
   view,
   courses,
-  courseCategoryList,
-  courseTypeList,
-  pricingMap,
   currentPage,
   totalPages,
   totalCourses,
   itemsPerPage,
   onPageChange,
-  onTableSort
+  onTableSort,
+  onCourseDeleted
 }: CourseListProps) {
   const paginationData = {
     total: totalCourses,
@@ -62,19 +56,15 @@ export function CourseList({
             <CourseGridCard
               key={course.id}
               course={course}
-              courseCategoryList={courseCategoryList}
-              courseTypeList={courseTypeList}
-              pricingMap={pricingMap}
+              onCourseDeleted={onCourseDeleted}
             />
           ))}
         </div>
       ) : (
         <CourseTableView
           courses={courses}
-          courseCategoryList={courseCategoryList}
-          courseTypeList={courseTypeList}
-          pricingMap={pricingMap}
           onSort={onTableSort}
+          onCourseDeleted={onCourseDeleted}
         />
       )}
 

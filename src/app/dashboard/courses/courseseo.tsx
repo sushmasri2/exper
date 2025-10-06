@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Course } from "@/types/course";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { ValidatedInput, ValidatedTextarea } from "./components/ValidatedFormComponents";
 import { useCourseSeoValidation } from "./hooks/useCourseSeoValidation";
 
@@ -12,13 +13,13 @@ interface CourseSeoProps {
 
 export default function Seo({ courseData }: CourseSeoProps) {
     // Form data state for tracking changes
-    const [formData, setFormData] = useState<Partial<Course>>({});
-    
+    const [formData, setFormData] = useState<CourseSettingsPartialFormData>({});
+
     // Validation hook
     const [, validationActions] = useCourseSeoValidation();
 
     // Handler functions for form inputs
-    const handleSeoChange = (field: keyof Course, value: string) => {
+    const handleSeoChange = (field: keyof CourseSettingsPartialFormData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         validationActions.validateSeoField(String(field), value);
     };
@@ -109,7 +110,7 @@ export default function Seo({ courseData }: CourseSeoProps) {
         </div>
         <div className="flex justify-end mt-4">
             <Button className="me-2" onClick={handleCancel}>Cancel</Button>
-            <Button variant='courseCreate' onClick={handleFormSubmit}>
+            <Button variant='primaryBtn' onClick={handleFormSubmit}>
                 {!courseData ? 'Create' : 'Update'}
             </Button>
         </div>

@@ -152,15 +152,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (response.ok) {
           const data = await response.json();
           if (data.user) {
-            setUser(data.user);
+            // Include the token in the user object for localStorage
+            const userWithToken = {
+              ...data.user,
+              token: data.accessToken
+            };
+            setUser(userWithToken);
             if (data.accessToken && typeof window !== 'undefined') {
               sessionStorage.setItem('accessToken', data.accessToken);
             }
-            userStorage.setItem(JSON.stringify(data.user));
+            userStorage.setItem(JSON.stringify(userWithToken));
             // Cache session result
             if (typeof window !== 'undefined') {
               sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify({
-                user: data.user,
+                user: userWithToken,
                 accessToken: data.accessToken,
                 timestamp: Date.now(),
               }));
@@ -504,6 +509,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null);
       userStorage.removeItem();
+      // Clear token refresh cache on logout
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.removeItem('medai_token_refresh_cache');
+        } catch (error) {
+          console.error('Error clearing token refresh cache:', error);
+        }
+      }
       setLoading(false);
       router.push('/login');
     }

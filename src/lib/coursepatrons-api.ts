@@ -1,25 +1,11 @@
-import { CoursePatronsResponse, CoursePatron } from "@/types/coursepatrons";
+import { CoursePatronsResponse,PatronApiResponse,CreatePatronData,UpdatePatronData} from "@/types/coursepatrons";
 import { fetchWithHeaders } from "./api-client";
 
-export interface CreatePatronData {
-    name: string;
-    designation: string;
-    image: string;
-}
 
-export interface UpdatePatronData extends CreatePatronData {
-    id: number;
-}
-
-export interface PatronApiResponse {
-    status: string;
-    message: string;
-    data?: CoursePatron;
-}
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 export async function getCoursesPatrons(courseUuid: string): Promise<CoursePatronsResponse | null> {
      try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-patrons/${courseUuid}/`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -51,7 +37,6 @@ export async function getCoursesPatrons(courseUuid: string): Promise<CoursePatro
 
 export async function createPatron(courseUuid: string, patronData: CreatePatronData): Promise<PatronApiResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-patrons/${courseUuid}/`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -78,7 +63,6 @@ export async function createPatron(courseUuid: string, patronData: CreatePatronD
 
 export async function updatePatron(courseUuid: string, patronData: UpdatePatronData): Promise<PatronApiResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-patrons/${courseUuid}/${patronData.id}/`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -109,7 +93,6 @@ export async function updatePatron(courseUuid: string, patronData: UpdatePatronD
 
 export async function deletePatron(courseUuid: string, patronId: number): Promise<PatronApiResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-patrons/${courseUuid}/${patronId}/`;
 
         const response = await fetchWithHeaders(fullUrl, {

@@ -13,14 +13,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  Info, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Info,
   Trash2,
   HelpCircle,
-  type LucideIcon 
+  type LucideIcon
 } from "lucide-react"
 
 type ModalType = "default" | "alert" | "confirmation" | "form" | "simple"
@@ -29,7 +29,7 @@ type ConfirmationType = "delete" | "warning" | "info" | "success"
 
 interface ModalProps
   extends React.ComponentPropsWithoutRef<typeof Dialog>,
-    VariantProps<typeof dialogContentVariants> {
+  VariantProps<typeof dialogContentVariants> {
   // Basic props
   trigger?: React.ReactNode
   title?: string
@@ -40,18 +40,18 @@ interface ModalProps
   closeButtonText?: string
   className?: string
   onClose?: () => void
-  
+
   // Modal type and variants
   type?: ModalType
   variant?: AlertType | ConfirmationType
-  
+
   // Alert/Confirmation specific
   message?: string
   icon?: React.ReactNode | LucideIcon
   showIcon?: boolean
   autoClose?: boolean
   autoCloseDelay?: number
-  
+
   // Confirmation specific
   confirmText?: string
   cancelText?: string
@@ -59,7 +59,8 @@ interface ModalProps
   onCancel?: () => void
   destructive?: boolean
   loading?: boolean
-  
+  confirmButtonVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | "glass" | "primaryBtn"
+
   // Form specific
   submitText?: string
   onSubmit?: (formData: FormData) => void | Promise<void>
@@ -74,30 +75,30 @@ const getAlertConfig = (variant: AlertType) => {
     case "success":
       return {
         icon: CheckCircle,
-        className: "border-green-200 dark:border-green-800",
-        iconClassName: "text-green-500",
+        className: "border-green-300 shadow-xl dark:border-green-800",
+        iconClassName: "text-green-500 dark:text-green-400",
         buttonVariant: "default" as const,
       }
     case "error":
       return {
         icon: XCircle,
-        className: "border-red-200 dark:border-red-800",
-        iconClassName: "text-red-500",
+        className: "border-red-300 shadow-xl dark:border-red-800",
+        iconClassName: "text-red-500 dark:text-red-400",
         buttonVariant: "destructive" as const,
       }
     case "warning":
       return {
         icon: AlertTriangle,
-        className: "border-yellow-200 dark:border-yellow-800",
-        iconClassName: "text-yellow-500",
+        className: "border-yellow-300 shadow-xl dark:border-yellow-800",
+        iconClassName: "text-yellow-500 dark:text-yellow-400",
         buttonVariant: "default" as const,
       }
     case "info":
     default:
       return {
         icon: Info,
-        className: "border-blue-200 dark:border-blue-800",
-        iconClassName: "text-blue-500",
+        className: "border-blue-300 shadow-xl dark:border-blue-800",
+        iconClassName: "text-blue-500 dark:text-blue-400",
         buttonVariant: "default" as const,
       }
   }
@@ -110,21 +111,24 @@ const getConfirmationConfig = (variant: ConfirmationType) => {
         icon: Trash2,
         title: "Delete Item",
         confirmVariant: "destructive" as const,
-        iconClassName: "text-destructive",
+        iconClassName: "text-red-600 dark:text-red-400",
+        className: "border-red-300 shadow-lg dark:border-red-600 dark:shadow-2xl",
       }
     case "warning":
       return {
         icon: AlertTriangle,
         title: "Warning",
         confirmVariant: "destructive" as const,
-        iconClassName: "text-yellow-500",
+        iconClassName: "text-yellow-500 dark:text-yellow-400",
+        className: "border-yellow-300 shadow-2xl dark:border-yellow-700 dark:shadow-2xl",
       }
     case "success":
       return {
         icon: CheckCircle,
         title: "Confirm Action",
         confirmVariant: "default" as const,
-        iconClassName: "text-green-500",
+        iconClassName: "text-green-500 dark:text-green-400",
+        className: "border-green-300 shadow-2xl dark:border-green-700 dark:shadow-2xl",
       }
     case "info":
     default:
@@ -132,7 +136,8 @@ const getConfirmationConfig = (variant: ConfirmationType) => {
         icon: HelpCircle,
         title: "Confirm Action",
         confirmVariant: "default" as const,
-        iconClassName: "text-blue-500",
+        iconClassName: "text-blue-500 dark:text-blue-400",
+        className: "border-blue-300 shadow-2xl dark:border-blue-700 dark:shadow-2xl",
       }
   }
 }
@@ -156,18 +161,18 @@ const Modal = React.forwardRef<
       onClose,
       open,
       onOpenChange,
-      
+
       // Modal type and variants
       type = "default",
       variant,
-      
+
       // Alert/Confirmation specific
       message,
       icon,
       showIcon = true,
       autoClose = false,
       autoCloseDelay = 3000,
-      
+
       // Confirmation specific
       confirmText = "Confirm",
       cancelText = "Cancel",
@@ -175,14 +180,15 @@ const Modal = React.forwardRef<
       onCancel,
       destructive,
       loading = false,
-      
+      confirmButtonVariant,
+
       // Form specific
       submitText = "Submit",
       onSubmit,
       formId,
       resetOnSubmit = false,
       disabled = false,
-      
+
       ...props
     },
     ref
@@ -198,7 +204,7 @@ const Modal = React.forwardRef<
         const timer = setTimeout(() => {
           onOpenChange?.(false)
         }, autoCloseDelay)
-        
+
         return () => clearTimeout(timer)
       }
     }, [autoClose, autoCloseDelay, open, onOpenChange, type])
@@ -234,13 +240,13 @@ const Modal = React.forwardRef<
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      
+
       if (onSubmit) {
         try {
           setIsLoading(true)
           const formData = new FormData(event.currentTarget)
           await onSubmit(formData)
-          
+
           if (resetOnSubmit) {
             event.currentTarget.reset()
           }
@@ -255,20 +261,22 @@ const Modal = React.forwardRef<
     // Get configuration based on type and variant
     const alertConfig = type === "alert" && variant ? getAlertConfig(variant as AlertType) : null
     const confirmConfig = type === "confirmation" && variant ? getConfirmationConfig(variant as ConfirmationType) : null
-    
+
     // Determine final values
     const finalTitle = title || confirmConfig?.title || (type === "alert" ? (variant as string).charAt(0).toUpperCase() + (variant as string).slice(1) : undefined)
+    const finalDescription = description || (type === "alert" || type === "confirmation" ? message : undefined)
     const finalSize = type === "confirmation" || type === "alert" ? "sm" : size
     const finalClassName = cn(
       type === "simple" && "p-0 border-0 bg-transparent shadow-none",
       alertConfig?.className,
+      confirmConfig?.className,
       className
     )
 
     // Render icon
     const renderIcon = () => {
       if (!showIcon || (type !== "alert" && type !== "confirmation")) return null
-      
+
       if (icon) {
         if (React.isValidElement(icon)) {
           return icon
@@ -279,13 +287,13 @@ const Modal = React.forwardRef<
           return <IconComponent className={cn("h-6 w-6", iconClass)} />
         }
       }
-      
+
       const DefaultIcon = alertConfig?.icon || confirmConfig?.icon
       if (DefaultIcon) {
         const iconClass = alertConfig?.iconClassName || confirmConfig?.iconClassName
         return <DefaultIcon className={cn("h-6 w-6", iconClass)} />
       }
-      
+
       return null
     }
 
@@ -320,8 +328,8 @@ const Modal = React.forwardRef<
                   {cancelText}
                 </Button>
               </DialogClose>
-              <Button
-                variant={destructive ? "destructive" : confirmConfig?.confirmVariant || "default"}
+                            <Button
+                variant={destructive ? "destructive" : confirmButtonVariant || confirmConfig?.confirmVariant || "default"}
                 onClick={handleConfirm}
                 disabled={loading || isLoading}
               >
@@ -376,11 +384,6 @@ const Modal = React.forwardRef<
               </div>
             )}
             <div className="flex-1">
-              {message && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {message}
-                </p>
-              )}
               {children}
             </div>
           </div>
@@ -411,18 +414,23 @@ const Modal = React.forwardRef<
     return (
       <Dialog open={open} onOpenChange={handleOpenChange} {...props}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent ref={ref} size={finalSize} className={finalClassName}>
-          {(finalTitle || description) && type !== "simple" && (
+        <DialogContent ref={ref} size={finalSize} className={finalClassName} aria-describedby={finalDescription ? undefined : "modal-content"}>
+          {(finalTitle || finalDescription) && type !== "simple" && (
             <DialogHeader>
               {finalTitle && <DialogTitle>{finalTitle}</DialogTitle>}
-              {description && <DialogDescription>{description}</DialogDescription>}
+              {finalDescription && <DialogDescription>{finalDescription}</DialogDescription>}
             </DialogHeader>
           )}
-          
+          {!finalDescription && type !== "simple" && (
+            <DialogDescription id="modal-content" className="sr-only">
+              Modal content
+            </DialogDescription>
+          )}
+
           {renderContent()}
-          
+
           {renderFooter() && type !== "simple" && (
-            <DialogFooter>
+            <DialogFooter className="flex gap-3 justify-end mt-6">
               {renderFooter()}
             </DialogFooter>
           )}
@@ -458,7 +466,7 @@ const useModal = (): UseModalReturn => {
   const ModalComponent = React.useMemo(() => {
     return function ModalComponent() {
       if (!modalConfig) return null
-      
+
       return (
         <Modal
           {...modalConfig}
@@ -496,7 +504,7 @@ const FormField: React.FC<FormFieldProps> = ({
     "aria-invalid": !!error,
     "aria-describedby": error ? `${name}-error` : undefined,
   }
-  
+
   const child = React.cloneElement(children, childProps)
 
   return (
@@ -596,8 +604,8 @@ const useFormValidation = ({
   }
 }
 
-export { 
-  Modal, 
+export {
+  Modal,
   FormField,
   useModal,
   useFormValidation,

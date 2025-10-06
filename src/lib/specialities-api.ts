@@ -1,12 +1,12 @@
 import { fetchWithHeaders } from './api-client';
 import { Specialty, IntendedAudienceResponse } from '@/types/specialities';
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 /**
  * Fetch all specialities/intended audience options
  */
 export async function getSpecialities(): Promise<Specialty[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         if (!baseUrl) {
             throw new Error('API base URL is not defined');
         }
@@ -49,7 +49,6 @@ export async function getSpecialities(): Promise<Specialty[]> {
  */
 export async function getCourseIntendedAudiences(courseUuid: string): Promise<IntendedAudienceResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         if (!baseUrl) {
             throw new Error('API base URL is not defined');
         }
@@ -86,7 +85,6 @@ export async function getCourseIntendedAudiences(courseUuid: string): Promise<In
 }
 export async function UpdateIntendedAudiences(courseUuid: string, audiences: string[]): Promise<Specialty[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         if (!baseUrl) {
             throw new Error('API base URL is not defined');
         }

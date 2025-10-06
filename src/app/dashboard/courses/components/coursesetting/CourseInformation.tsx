@@ -2,6 +2,7 @@
 
 import Select2 from "@/components/ui/Select2";
 import { Course } from "@/types/course";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
 import { ValidatedInput, ValidatedTextarea } from "../ValidatedFormComponents";
 import { Input } from "@/components/ui/input";
@@ -9,10 +10,10 @@ import { Input } from "@/components/ui/input";
 interface CourseInformationProps {
     courseData?: Course | null;
     courseSettings?: Partial<CourseSettingsData>;
-    formData: Partial<Course>;
+    formData: CourseSettingsPartialFormData;
     data: CourseSettingsData;
     actions: CourseSettingsActions;
-    onInputChange: (field: keyof Course, value: string | number | boolean | string[]) => void;
+    onInputChange: (field: keyof CourseSettingsPartialFormData, value: string | number | boolean | string[]) => void;
 }
 export default function CourseInformation({
     courseData,
@@ -32,7 +33,7 @@ export default function CourseInformation({
         selectedEligibilities,
         keywords
     } = data;
-    
+
     const {
         setSelectedCategory,
         setSelectedCourseType,
@@ -40,17 +41,17 @@ export default function CourseInformation({
         setKeywords,
         validation: validationActions
     } = actions;
-    
+
     return (
         <div className="px-5 py-3">
             {/* Course Title */}
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-4 gap-4 mb-4">
                 <div>
                     <ValidatedInput
                         type="text"
                         name="course_name"
-                        label="Course Card Title"
-                        placeholder="Course Title"
+                        label="Course Name"
+                        placeholder="Course Name"
                         value={typeof formData.course_name === "string" ? formData.course_name : (courseData?.course_name || "")}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const value = e.target.value;
@@ -58,6 +59,37 @@ export default function CourseInformation({
                             validationActions.validateSingleField('course_name', value);
                         }}
                         error={validationActions.getFieldError('course_name')}
+                        required
+                    />
+                </div>
+                <div>
+                    <ValidatedInput
+                        type="text"
+                        name="course_card_title"
+                        label="Course Card Title"
+                        placeholder="Course Card Title"
+                        value={typeof formData.course_card_title === "string" ? formData.course_card_title : (courseData?.course_card_title || "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('course_card_title', value);
+                            validationActions.validateSingleField('course_card_title', value);
+                        }}
+                        error={validationActions.getFieldError('course_card_title')}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="text-lg font-medium m-2">Short Code</label>
+                    <ValidatedInput
+                        type="text"
+                        placeholder="Short Code"
+                        value={typeof formData.short_code === "string" ? formData.short_code : (courseData?.short_code || "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('short_code', value);
+                            validationActions.validateSingleField('short_code', value);
+                        }}
+                        error={validationActions.getFieldError('short_code')}
                         required
                     />
                 </div>
@@ -166,31 +198,6 @@ export default function CourseInformation({
                             // Keywords are stored separately, not validated as a single field
                         }}
                     />
-                </div>
-                <div>
-                    <label className="text-lg font-medium m-2">Specialty Type</label>
-                    <Select2
-                        options={[
-                            { label: 'Select Specialty Type', value: '' },
-                            { label: 'Doctors', value: 'doctors' },
-                            { label: 'Nurses', value: 'nurses' },
-                            { label: 'Others', value: 'others' },
-                        ]}
-                        value={typeof formData.speciality_type === 'string' ? formData.speciality_type : (courseSettings?.speciality_type || '')}
-                        onChange={(val: string | string[]) => {
-                            if (typeof val === 'string') {
-                                onInputChange('speciality_type', val);
-                                validationActions.validateSingleField('speciality_type', val); // true indicates it's a CourseSetting field
-                            }
-                        }}
-                        placeholder="Select Specialty Type"
-                        style={{ padding: '0.6rem' }}
-                    />
-                    {validationActions.getFieldError('speciality_type') && (
-                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
-                            {validationActions.getFieldError('speciality_type')}
-                        </p>
-                    )}
                 </div>
             </div>
 

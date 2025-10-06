@@ -12,16 +12,18 @@ const buttonVariants = cva(
         default:
           "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-red-600 text-white shadow-xs hover:bg-red-700 focus-visible:ring-red-500/20 dark:bg-red-600 dark:text-white dark:hover:bg-red-700",
         outline:
           "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+          "bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 font-semibold py-2 px-4 rounded-lg",
+        outlineSecondary:
+          "bg-transparent text-gray-800 border border-gray-400 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-700 font-semibold py-2 px-4 rounded-lg",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
         glass: "bg-white/20 text-white backdrop-blur-md border border-white/30",
-        courseCreate: "bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white"
+        primaryBtn: "bg-gradient-to-br from-[#667eea] to-[#764ba2] text-white"
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

@@ -12,7 +12,7 @@ export interface RecommendedCourse {
         id: number;
         uuid: string;
         course_name: string;
-        short_description: string;
+        short_description: string | null;
         status: number;
     };
     [key: string]: unknown;

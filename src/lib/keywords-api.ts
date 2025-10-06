@@ -1,9 +1,9 @@
 import { CourseKeyword } from "../types/keyword";
 import { fetchWithHeaders } from "./api-client";
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 export async function getCourseKeywords(courseUuid: string): Promise<CourseKeyword[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/courses/${courseUuid}/keywords`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -37,7 +37,6 @@ export async function getCourseKeywords(courseUuid: string): Promise<CourseKeywo
 
 export async function updateCourseKeywords(courseUuid: string, keywords: string[]): Promise<CourseKeyword[]> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/courses/${courseUuid}/keywords`;
         const response = await fetchWithHeaders(fullUrl, {
             method: "PUT",

@@ -6,7 +6,6 @@ import { Course } from "@/types/course";
 interface UseCourseFilterProps {
   courses: Course[];
   searchQuery: string;
-  selectedCourse: string;
   selectedCategory: string;
   selectedCourseType: string;
   sortByOption: string;
@@ -15,7 +14,6 @@ interface UseCourseFilterProps {
 export function useCoursesFilter({
   courses,
   searchQuery,
-  selectedCourse,
   selectedCategory,
   selectedCourseType,
   sortByOption
@@ -28,11 +26,6 @@ export function useCoursesFilter({
       result = result.filter((c) =>
         c.course_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    }
-
-    // Course filter
-    if (selectedCourse) {
-      result = result.filter((c) => c.seo_url === selectedCourse);
     }
 
     // Category filter
@@ -53,7 +46,7 @@ export function useCoursesFilter({
     }
 
     return result;
-  }, [courses, searchQuery, selectedCourse, selectedCategory, selectedCourseType, sortByOption]);
+  }, [courses, searchQuery, selectedCategory, selectedCourseType, sortByOption]);
 }
 
 interface UseSortedCoursesProps {

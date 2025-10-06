@@ -1,9 +1,10 @@
 import { CourseSetting } from "../types/coursesetting";
 import { fetchWithHeaders } from "./api-client";
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
+
 
 export async function getCourseSettings(courseUuid: string): Promise<CourseSetting | null> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-settings/course/${courseUuid}/`;
 
         const response = await fetchWithHeaders(fullUrl, {
@@ -34,7 +35,6 @@ export async function getCourseSettings(courseUuid: string): Promise<CourseSetti
 }
 export async function updateCourseSettings(courseUuid: string, settings: Partial<CourseSetting>): Promise<CourseSetting> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || "";
         const fullUrl = `${baseUrl}/api/course-settings/${courseUuid}/`;
         const response = await fetchWithHeaders(fullUrl, {
             method: "PUT",

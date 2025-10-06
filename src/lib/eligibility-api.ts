@@ -3,10 +3,10 @@ import { fetchWithHeaders } from './api-client';
 
 // Interface for the course eligibility API response
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 export async function getEligibilities(): Promise<Eligibility[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }
@@ -69,7 +69,6 @@ export async function getEligibilities(): Promise<Eligibility[]> {
 
 export async function getCourseEligibilities(courseUuid: string): Promise<Eligibility[]> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }

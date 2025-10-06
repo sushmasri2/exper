@@ -1,15 +1,16 @@
 "use client";
 
 import { Course } from "@/types/course";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
 import { ValidatedInput } from "../ValidatedFormComponents";
 
 interface VisualAssetsProps {
     courseData?: Course | null;
-    formData: Partial<Course>;
+    formData: CourseSettingsPartialFormData;
     data: CourseSettingsData;
     actions: CourseSettingsActions;
-    onInputChange: (field: keyof Course, value: string | number | boolean | string[]) => void;
+    onInputChange: (field: keyof CourseSettingsPartialFormData, value: string | number | boolean | string[]) => void;
 }
 
 export default function VisualAssets({

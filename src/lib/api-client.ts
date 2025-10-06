@@ -7,6 +7,9 @@ import { showToast } from './toast';
  */
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// Import the interceptor at the top level
+import { fetchWithInterceptor } from './api-interceptor';
+
 /**
  * Custom fetch function that always includes the Platform header
  * @param url URL to fetch
@@ -14,9 +17,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
  * @returns Fetch response
  */
 export async function fetchWithHeaders(url: string, options: RequestInit = {}): Promise<Response> {
-  // Import and use the interceptor
-  const { fetchWithInterceptor } = await import('./api-interceptor');
-
   // Use the interceptor which handles auth headers and token refresh
   return fetchWithInterceptor(url, options);
 }

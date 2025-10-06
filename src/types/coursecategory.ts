@@ -23,10 +23,29 @@ export interface PaginatedResponse<T> {
     hasNext: boolean;
     hasPrev: boolean;
     links: {
-      next: string;
-      prev: string;
+      next: string | null;
+      prev: string | null;
       first: string;
       last: string;
     };
   };
+}
+export interface CategoryCreateRequest {
+  name: string;
+  description: string;
+  short_code: string;
+  image?: string;
+  color_code: string;
+  background_color_code: string;
+  position?: number;
+  slug?: string;
+  status?: boolean | number;
+}
+
+export type CategoryUpdateRequest = Partial<CategoryCreateRequest>;
+
+export interface ApiResponse<T> {
+  status: 'success' | 'error';
+  message: string;
+  data: T;
 }

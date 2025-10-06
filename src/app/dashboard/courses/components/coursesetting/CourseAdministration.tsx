@@ -2,17 +2,19 @@
 
 import Select2 from "@/components/ui/Select2";
 import { Course } from "@/types/course";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
 import { ValidatedInput } from "../ValidatedFormComponents";
 
 interface CourseAdministrationProps {
-    formData: Partial<Course>;
+    courseData?: Course | null;
+    formData: CourseSettingsPartialFormData;
     data: CourseSettingsData;
     actions: CourseSettingsActions;
-    onInputChange: (field: keyof Course, value: string | number | boolean | string[]) => void;
+    onInputChange: (field: keyof CourseSettingsPartialFormData, value: string | number | boolean | string[]) => void;
 }
 
-export default function CourseAdministration({ formData, data, actions, onInputChange }: CourseAdministrationProps) {
+export default function CourseAdministration({ courseData, formData, data, actions, onInputChange }: CourseAdministrationProps) {
     const { instructors, courseSettings, selectedInstructors } = data;
     const { setSelectedInstructors, validation: validationActions } = actions;
 
@@ -47,7 +49,33 @@ export default function CourseAdministration({ formData, data, actions, onInputC
 
     return (
         <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Specialty Type */}
+                <div>
+                    <label className="text-lg font-medium m-2">Specialty Type</label>
+                    <Select2
+                        options={[
+                            { label: 'Select Specialty Type', value: '' },
+                            { label: 'Doctors', value: 'doctors' },
+                            { label: 'Nurses', value: 'nurses' },
+                            { label: 'Others', value: 'others' },
+                        ]}
+                        value={typeof formData.speciality_type === 'string' ? formData.speciality_type : (courseSettings?.speciality_type || '')}
+                        onChange={(val: string | string[]) => {
+                            if (typeof val === 'string') {
+                                onInputChange('speciality_type', val);
+                                validationActions.validateSingleField('speciality_type', val); // true indicates it's a CourseSetting field
+                            }
+                        }}
+                        placeholder="Select Specialty Type"
+                        style={{ padding: '0.6rem' }}
+                    />
+                    {validationActions.getFieldError('speciality_type') && (
+                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                            {validationActions.getFieldError('speciality_type')}
+                        </p>
+                    )}
+                </div>
                 {/* Instructor */}
                 <div>
                     <label className="block text-lg font-medium">Course Instructor</label>
@@ -64,7 +92,6 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                     />
                     {/* End of Partner Code section */}
                 </div>
-
                 {/* Partner Code */}
                 <div>
                     <ValidatedInput
@@ -80,7 +107,42 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                         placeholder="Enter Partner Course Code"
                     />
                 </div>
-
+                {/* Location */}
+                <div>
+                    <label className="block text-lg font-medium">Course Location</label>
+                    <Select2
+                        options={[
+                            { label: 'Select Location', value: '' },
+                            { label: 'India', value: 'IN' },
+                            { label: 'USA', value: 'US' },
+                            { label: 'UK', value: 'UK' },
+                            { label: 'UAE', value: 'AE' },
+                            { label: 'Bangladesh', value: 'BD' },
+                            { label: 'Indonesia', value: 'ID' }
+                        ]}
+                        value={(() => {
+                            // Handle location value - convert string to array for multi-select
+                            const locationValue = typeof formData.location === 'string' ? formData.location :
+                                (typeof courseData?.location === 'string' ? courseData.location : '');
+                            if (!locationValue) return [];
+                            return locationValue.includes(',') ? locationValue.split(',').map(s => s.trim()) : [locationValue];
+                        })()}
+                        onChange={(val: string | string[]) => {
+                            // Convert array back to comma-separated string for storage
+                            if (Array.isArray(val)) {
+                                const locationString = val.filter(v => v !== '').join(',');
+                                onInputChange('location', locationString);
+                                validationActions.validateSingleField('location', locationString);
+                            } else if (typeof val === 'string') {
+                                onInputChange('location', val);
+                                validationActions.validateSingleField('location', val);
+                            }
+                        }}
+                        multiple={true}
+                        placeholder="Select Location"
+                        style={{ padding: '0.6rem' }}
+                    />
+                </div>
                 {/* Start Date */}
                 <div>
                     <ValidatedInput
@@ -97,10 +159,9 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                         style={{ padding: '0.6rem' }}
                     />
                 </div>
-
                 {/* Duration */}
                 <div>
-                    <label className="block text-lg font-medium mb-2">Duration (Y/M/D)</label>
+                    <label className="block text-lg font-medium">Duration (Y/M/D)</label>
                     <div className="flex gap-2">
                         <ValidatedInput
                             className="px-3 py-2"
@@ -132,14 +193,13 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                     </div>
                     <p className="text-red-500">
                         {validationActions.getFieldError('duration_years') ||
-                         validationActions.getFieldError('duration_months') ||
-                         validationActions.getFieldError('duration_days')}
+                            validationActions.getFieldError('duration_months') ||
+                            validationActions.getFieldError('duration_days')}
                     </p>
                 </div>
-
                 {/* Extended Validity */}
                 <div>
-                    <label className="block text-lg font-medium mb-2">Extended Validity (Y/M/D)</label>
+                    <label className="block text-lg font-medium">Extended Validity (Y/M/D)</label>
                     <div className="flex gap-2">
                         <ValidatedInput
                             className="px-3 py-2"
@@ -171,12 +231,10 @@ export default function CourseAdministration({ formData, data, actions, onInputC
                     </div>
                     <p className="text-red-500">
                         {validationActions.getFieldError('extendedvalidity_years') ||
-                         validationActions.getFieldError('extendedvalidity_months') ||
-                         validationActions.getFieldError('extendedvalidity_days')}
+                            validationActions.getFieldError('extendedvalidity_months') ||
+                            validationActions.getFieldError('extendedvalidity_days')}
                     </p>
                 </div>
-
-
                 {/* Schedule */}
                 <div>
                     <label className="block text-lg font-medium mb-2">Course Schedule</label>
@@ -206,122 +264,124 @@ export default function CourseAdministration({ formData, data, actions, onInputC
             </div>
 
             {/* Schedule Config */}
-            {currentSchedule && (
-                <div className="mt-6  bg-gray-50 rounded-lg">
-                    {currentSchedule === 'daily' && (
-                        <>
-                            <p className="text-sm text-gray-600 mb-3">Adding 2 days here, will repeat the Course every 2 days until the end date.</p>
-                            <ValidatedInput
-                                className="px-3 py-2 max-w-xs"
-                                label="Number of Days"
-                                value={typeof formData.d_days === 'string' ? formData.d_days : (courseSettings?.d_days ?? "")}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    const value = e.target.value;
-                                    onInputChange('d_days', value);
-                                    validationActions.validateSingleField('d_days', value);
-                                }}
-                                error={validationActions.getFieldError('d_days')}
-                                placeholder="Enter number of days" />
-                        </>
-                    )}
+            {
+                currentSchedule && (
+                    <div className="mt-6  bg-gray-50 rounded-lg">
+                        {currentSchedule === 'daily' && (
+                            <>
+                                <p className="text-sm text-gray-600 mb-3">Adding 2 days here, will repeat the Course every 2 days until the end date.</p>
+                                <ValidatedInput
+                                    className="px-3 py-2 max-w-xs"
+                                    label="Number of Days"
+                                    value={typeof formData.d_days === 'string' ? formData.d_days : (courseSettings?.d_days ?? "")}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        const value = e.target.value;
+                                        onInputChange('d_days', value);
+                                        validationActions.validateSingleField('d_days', value);
+                                    }}
+                                    error={validationActions.getFieldError('d_days')}
+                                    placeholder="Enter number of days" />
+                            </>
+                        )}
 
-                    {currentSchedule === 'weekly' && (
-                        <>
-                            <p className="text-sm text-gray-600 mb-3">Adding 2 Week & Selecting Monday, Tuesday here, will repeat the Course every 2 weeks on Monday Tuesday until the end date.</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <ValidatedInput
-                                        className="px-3 py-2"
-                                        label="Number of Weeks"
-                                        value={typeof formData.w_week === 'string' ? formData.w_week : (courseSettings?.w_week ?? "")}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            const value = e.target.value;
-                                            onInputChange('w_week', value);
-                                            validationActions.validateSingleField('w_week', value);
-                                        }}
-                                        error={validationActions.getFieldError('w_week')}
-                                        placeholder="Enter number of weeks" 
+                        {currentSchedule === 'weekly' && (
+                            <>
+                                <p className="text-sm text-gray-600 mb-3">Adding 2 Week & Selecting Monday, Tuesday here, will repeat the Course every 2 weeks on Monday Tuesday until the end date.</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <ValidatedInput
+                                            className="px-3 py-2"
+                                            label="Number of Weeks"
+                                            value={typeof formData.w_week === 'string' ? formData.w_week : (courseSettings?.w_week ?? "")}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                const value = e.target.value;
+                                                onInputChange('w_week', value);
+                                                validationActions.validateSingleField('w_week', value);
+                                            }}
+                                            error={validationActions.getFieldError('w_week')}
+                                            placeholder="Enter number of weeks"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-lg font-medium mb-2">Select Days</label>
+                                        <Select2
+                                            options={weekdays}
+                                            value={getMultiValue(formData.w_days ?? courseSettings?.w_days)}
+                                            onChange={(value) => onInputChange('w_days', Array.isArray(value) ? value : [value])}
+                                            multiple={true}
+                                            placeholder="Select weekdays"
+                                            style={{ padding: '0.6rem' }}
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-lg font-medium mb-2">Select Days</label>
-                                    <Select2
-                                        options={weekdays}
-                                        value={getMultiValue(formData.w_days ?? courseSettings?.w_days)}
-                                        onChange={(value) => onInputChange('w_days', Array.isArray(value) ? value : [value])}
-                                        multiple={true}
-                                        placeholder="Select weekdays"
-                                        style={{ padding: '0.6rem' }}
-                                    />
-                                </div>
-                            </div>
-                        </>
-                    )}
+                            </>
+                        )}
 
-                    {currentSchedule === 'monthly' && (
-                        <>
-                            <p className="text-sm text-gray-600 mb-3">Adding 2 Month & Day 5 here, will repeat the Course every 2 months (ie. January, March, May...) on the 5th day until the end date.</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-lg font-medium mb-2">Select Month</label>
-                                    <Select2
-                                        options={months}
-                                        value={typeof formData.m_month === 'string' ? formData.m_month : (courseSettings?.m_month ? String(courseSettings.m_month) : "")}
-                                        onChange={(value) => onInputChange('m_month', typeof value === 'string' ? value : value[0])}
-                                        placeholder="Select month"
-                                        style={{ padding: '0.6rem' }}
-                                    />
+                        {currentSchedule === 'monthly' && (
+                            <>
+                                <p className="text-sm text-gray-600 mb-3">Adding 2 Month & Day 5 here, will repeat the Course every 2 months (ie. January, March, May...) on the 5th day until the end date.</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-lg font-medium mb-2">Select Month</label>
+                                        <Select2
+                                            options={months}
+                                            value={typeof formData.m_month === 'string' ? formData.m_month : (courseSettings?.m_month ? String(courseSettings.m_month) : "")}
+                                            onChange={(value) => onInputChange('m_month', typeof value === 'string' ? value : value[0])}
+                                            placeholder="Select month"
+                                            style={{ padding: '0.6rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-lg font-medium mb-2">Date</label>
+                                        <ValidatedInput
+                                            className="px-3 py-2"
+                                            value={typeof formData.m_day === 'string' ? formData.m_day : (courseSettings?.m_day ?? "")}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                const value = e.target.value;
+                                                onInputChange('m_day', value);
+                                                validationActions.validateSingleField('m_day', value);
+                                            }}
+                                            error={validationActions.getFieldError('m_day')}
+                                            placeholder="Enter date"
+                                            min={1} max={31} type="number" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-lg font-medium mb-2">Date</label>
-                                    <ValidatedInput
-                                        className="px-3 py-2"
-                                        value={typeof formData.m_day === 'string' ? formData.m_day : (courseSettings?.m_day ?? "")}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            const value = e.target.value;
-                                            onInputChange('m_day', value);
-                                            validationActions.validateSingleField('m_day', value);
-                                        }}
-                                        error={validationActions.getFieldError('m_day')}
-                                        placeholder="Enter date"
-                                        min={1} max={31} type="number" />
-                                </div>
-                            </div>
-                        </>
-                    )}
+                            </>
+                        )}
 
-                    {currentSchedule === 'yearly' && (
-                        <>
-                            <p className="text-sm text-gray-600 mb-3">Selecting Month Jan & Day 5 here, will repeat the Course every Year on January 5th until the end date.</p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-lg font-medium mb-2">Select Month</label>
-                                    <Select2
-                                        options={months}
-                                        value={typeof formData.y_month === 'string' ? formData.y_month : (courseSettings?.y_month ? String(courseSettings.y_month) : "")}
-                                        onChange={(value) => onInputChange('y_month', typeof value === 'string' ? value : value[0])}
-                                        placeholder="Select month"
-                                        style={{ padding: '0.6rem' }}
-                                    />
+                        {currentSchedule === 'yearly' && (
+                            <>
+                                <p className="text-sm text-gray-600 mb-3">Selecting Month Jan & Day 5 here, will repeat the Course every Year on January 5th until the end date.</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-lg font-medium mb-2">Select Month</label>
+                                        <Select2
+                                            options={months}
+                                            value={typeof formData.y_month === 'string' ? formData.y_month : (courseSettings?.y_month ? String(courseSettings.y_month) : "")}
+                                            onChange={(value) => onInputChange('y_month', typeof value === 'string' ? value : value[0])}
+                                            placeholder="Select month"
+                                            style={{ padding: '0.6rem' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-lg font-medium mb-2">Date</label>
+                                        <ValidatedInput
+                                            className="px-3 py-2"
+                                            value={typeof formData.y_day === 'string' ? formData.y_day : (courseSettings?.y_day ?? "")}
+                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                const value = e.target.value;
+                                                onInputChange('y_day', value);
+                                                validationActions.validateSingleField('y_day', value);
+                                            }}
+                                            error={validationActions.getFieldError('y_day')}
+                                            placeholder="Enter date" min={1} max={31} type="number" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-lg font-medium mb-2">Date</label>
-                                    <ValidatedInput
-                                        className="px-3 py-2"
-                                        value={typeof formData.y_day === 'string' ? formData.y_day : (courseSettings?.y_day ?? "")}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                            const value = e.target.value;
-                                            onInputChange('y_day', value);
-                                            validationActions.validateSingleField('y_day', value);
-                                        }}
-                                        error={validationActions.getFieldError('y_day')}
-                                        placeholder="Enter date" min={1} max={31} type="number" />
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-        </div>
+                            </>
+                        )}
+                    </div>
+                )
+            }
+        </div >
     );
 }

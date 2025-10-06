@@ -18,11 +18,11 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
   const [pricingUSD, setPricingUSD] = useState<CoursePricing | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Form data state for tracking changes
   const [formDataINR, setFormDataINR] = useState<Partial<CoursePricing>>({});
   const [formDataUSD, setFormDataUSD] = useState<Partial<CoursePricing>>({});
-  
+
   // Validation hook
   const [, validationActions] = useCoursePricingValidation();
 
@@ -74,11 +74,11 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
           const usd = data.find((p: CoursePricing) => p.currency === "USD") || null;
           setPricingINR(inr);
           setPricingUSD(usd);
-          
+
           // Initialize form data with fetched pricing
           setFormDataINR(inr || {});
           setFormDataUSD(usd || {});
-          
+
           setError(null);
         })
         .catch(() => {
@@ -119,40 +119,40 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Future Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('INR', 'future_price') ? 'border-red-500' : ''}
-                placeholder="Enter future price in INR" 
-                value={formDataINR?.future_price !== undefined && formDataINR?.future_price !== null ? String(formDataINR.future_price) : ""} 
-                onChange={(e) => handleINRChange('future_price', e.target.value)} 
+                placeholder="Enter future price in INR"
+                value={formDataINR?.future_price !== undefined && formDataINR?.future_price !== null ? String(formDataINR.future_price) : ""}
+                onChange={(e) => handleINRChange('future_price', e.target.value)}
                 error={validationActions.getFieldError('INR', 'future_price')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Future Price Effective Period</label>
-              <ValidatedInput 
+              <ValidatedInput
                 type="date"
                 className={validationActions.hasFieldError('INR', 'future_price_effect_from') ? 'border-red-500' : ''}
-                value={isoToDateValidatedInput(formDataINR?.future_price_effect_from)} 
-                onChange={(e) => handleINRChange('future_price_effect_from', e.target.value)} 
+                value={isoToDateValidatedInput(formDataINR?.future_price_effect_from)}
+                onChange={(e) => handleINRChange('future_price_effect_from', e.target.value)}
                 error={validationActions.getFieldError('INR', 'future_price_effect_from')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Extended Validity Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('INR', 'extended_validity_price') ? 'border-red-500' : ''}
-                placeholder="Enter extended validity price in INR" 
-                value={formDataINR?.extended_validity_price !== undefined && formDataINR?.extended_validity_price !== null ? String(formDataINR.extended_validity_price) : ""} 
-                onChange={(e) => handleINRChange('extended_validity_price', e.target.value)} 
+                placeholder="Enter extended validity price in INR"
+                value={formDataINR?.extended_validity_price !== undefined && formDataINR?.extended_validity_price !== null ? String(formDataINR.extended_validity_price) : ""}
+                onChange={(e) => handleINRChange('extended_validity_price', e.target.value)}
                 error={validationActions.getFieldError('INR', 'extended_validity_price')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Major Upgrade Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('INR', 'major_update_price') ? 'border-red-500' : ''}
-                placeholder="Enter major upgrade price in INR" 
-                value={formDataINR?.major_update_price !== undefined && formDataINR?.major_update_price !== null ? String(formDataINR.major_update_price) : ""} 
+                placeholder="Enter major upgrade price in INR"
+                value={formDataINR?.major_update_price !== undefined && formDataINR?.major_update_price !== null ? String(formDataINR.major_update_price) : ""}
                 onChange={(e) => handleINRChange('major_update_price', e.target.value)}
                 error={validationActions.getFieldError('INR', 'major_update_price')}
               />
@@ -164,51 +164,51 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
               <label className="text-md font-semibold text-gray-600">Current Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('USD', 'price') ? 'border-red-500' : ''}
-                placeholder="Enter price in USD" 
-                value={formDataUSD?.price !== undefined && formDataUSD?.price !== null ? String(formDataUSD.price) : ""} 
-                onChange={(e) => handleUSDChange('price', e.target.value)} 
+                placeholder="Enter price in USD"
+                value={formDataUSD?.price !== undefined && formDataUSD?.price !== null ? String(formDataUSD.price) : ""}
+                onChange={(e) => handleUSDChange('price', e.target.value)}
                 error={validationActions.getFieldError('USD', 'price')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Future Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('USD', 'future_price') ? 'border-red-500' : ''}
-                placeholder="Enter future price in USD" 
-                value={formDataUSD?.future_price !== undefined && formDataUSD?.future_price !== null ? String(formDataUSD.future_price) : ""} 
-                onChange={(e) => handleUSDChange('future_price', e.target.value)} 
+                placeholder="Enter future price in USD"
+                value={formDataUSD?.future_price !== undefined && formDataUSD?.future_price !== null ? String(formDataUSD.future_price) : ""}
+                onChange={(e) => handleUSDChange('future_price', e.target.value)}
                 error={validationActions.getFieldError('USD', 'future_price')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Future Price Effective Period</label>
-              <ValidatedInput 
+              <ValidatedInput
                 type="date"
                 className={validationActions.hasFieldError('USD', 'future_price_effect_from') ? 'border-red-500' : ''}
-                value={isoToDateValidatedInput(formDataUSD?.future_price_effect_from)} 
-                onChange={(e) => handleUSDChange('future_price_effect_from', e.target.value)} 
+                value={isoToDateValidatedInput(formDataUSD?.future_price_effect_from)}
+                onChange={(e) => handleUSDChange('future_price_effect_from', e.target.value)}
                 error={validationActions.getFieldError('USD', 'future_price_effect_from')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Extended Validity Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('USD', 'extended_validity_price') ? 'border-red-500' : ''}
-                placeholder="Enter extended validity price in USD" 
-                value={formDataUSD?.extended_validity_price !== undefined && formDataUSD?.extended_validity_price !== null ? String(formDataUSD.extended_validity_price) : ""} 
-                onChange={(e) => handleUSDChange('extended_validity_price', e.target.value)} 
+                placeholder="Enter extended validity price in USD"
+                value={formDataUSD?.extended_validity_price !== undefined && formDataUSD?.extended_validity_price !== null ? String(formDataUSD.extended_validity_price) : ""}
+                onChange={(e) => handleUSDChange('extended_validity_price', e.target.value)}
                 error={validationActions.getFieldError('USD', 'extended_validity_price')}
               />
             </div>
             <div>
               <label className="text-md font-semibold text-gray-600">Major Upgrade Price</label>
-              <ValidatedInput 
+              <ValidatedInput
                 className={validationActions.hasFieldError('USD', 'major_update_price') ? 'border-red-500' : ''}
-                placeholder="Enter major upgrade price in USD" 
-                value={formDataUSD?.major_update_price !== undefined && formDataUSD?.major_update_price !== null ? String(formDataUSD.major_update_price) : ""} 
-                onChange={(e) => handleUSDChange('major_update_price', e.target.value)} 
+                placeholder="Enter major upgrade price in USD"
+                value={formDataUSD?.major_update_price !== undefined && formDataUSD?.major_update_price !== null ? String(formDataUSD.major_update_price) : ""}
+                onChange={(e) => handleUSDChange('major_update_price', e.target.value)}
                 error={validationActions.getFieldError('USD', 'major_update_price')}
               />
             </div>
@@ -223,8 +223,8 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
             setFormDataUSD(originalUSD);
             validationActions.clearPricingErrors();
           }}>Cancel</Button>
-          <Button 
-            variant='courseCreate' 
+          <Button
+            variant='primaryBtn'
             onClick={handleFormSubmit}
           >
             {!courseData ? 'Create' : 'Update'}

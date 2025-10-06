@@ -6,18 +6,17 @@ import { getCoursesCategory } from "@/lib/coursecategory-api";
 import { CourseCategory } from "@/types/coursecategory";
 import { getCoursesType } from "@/lib/coursetype-api";
 import { CourseType } from "@/types/coursetype";
-import { CoursePricing } from "@/types/course-pricing";
-import { getCoursePricing } from "@/lib/courseprice-api";
 import { PageLoading } from "@/components/ui/loading-spinner";
 import { CourseFilters } from "./components/CourseFilters";
 import { CourseList } from "./components/CourseList";
 import { useCoursesFilter, useSortedCourses } from "./hooks/useCourseFilters";
+import { useApiCache } from "@/hooks/use-api-cache";
+import { setGlobalCacheInstance } from "@/lib/cache-utils";
 
 export default function Courses() {
   const [coursesList, setCoursesList] = useState<Course[]>([]);
   const [view, setView] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedCourseType, setSelectedCourseType] = useState('');
   const [sortByOption, setSortByOption] = useState("Newest");
@@ -27,83 +26,41 @@ export default function Courses() {
   const [tableSortConfig, setTableSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [courseCategoryList, setCourseCategoryList] = useState<CourseCategory[]>([]);
   const [courseTypeList, setCourseTypeList] = useState<CourseType[]>([]);
-  const [pricingMap, setPricingMap] = useState<Record<string, CoursePricing[]>>({});
+
+  const cacheInstance = useApiCache();
+  const { cachedApiCall, invalidateRelatedCache } = cacheInstance;
+
+  // Set global cache instance for API functions to use
+  setGlobalCacheInstance(cacheInstance);
 
   useEffect(() => {
-    const loadCourses = async () => {
+    const loadAllData = async () => {
       try {
-        const courses = await getCourses();
+        // Load all data concurrently with caching to prevent duplicate requests
+        const [courses, categories, courseTypes] = await Promise.all([
+          cachedApiCall(() => getCourses(), { cacheKey: 'courses' }),
+          cachedApiCall(() => getCoursesCategory(), { cacheKey: 'categories' }),
+          cachedApiCall(() => getCoursesType(), { cacheKey: 'course-types' })
+        ]);
+
+        // Set all data
         setCoursesList(courses);
+        setCourseCategoryList(categories.filter(c => c.status === 1));
+        setCourseTypeList(courseTypes.filter(c => c.status === 1));
       } catch (error) {
-        console.error('Failed to load courses:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCourses();
-  }, []);
-
-  useEffect(() => {
-    const loadCourseCategories = async () => {
-      try {
-        const categories = await getCoursesCategory();
-        setCourseCategoryList(categories.filter(c => c.status === 1));
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-      }
-    };
-    loadCourseCategories();
-  }, []);
-
-  useEffect(() => {
-    const loadCourseType = async () => {
-      try {
-        const coursetype = await getCoursesType();
-        setCourseTypeList(coursetype.filter(c => c.status === 1));
-      } catch (error) {
-        console.error('Failed to load coursetype:', error);
-      }
-    };
-    loadCourseType();
-  }, []);
-
-  useEffect(() => {
-    const fetchAllPricing = async () => {
-      try {
-        // Fetch in parallel for performance
-        const entries = await Promise.all(
-          coursesList.map(async (course) => {
-            try {
-              const prices = await getCoursePricing(course.uuid);
-              return [course.id.toString(), prices] as const; // key by numeric id as string
-            } catch (e) {
-              console.error(`Pricing fetch failed for course ${course.id}/${course.uuid}:`, e);
-              return [course.id.toString(), [] as CoursePricing[]] as const;
-            }
-          })
-        );
-
-        const map = Object.fromEntries(entries) as Record<string, CoursePricing[]>;
-        setPricingMap(map);
-        // Optional: compact log for verification
-        // console.log('Pricing Map built:', map);
-      } catch (error) {
-        console.error("Error fetching pricing:", error);
-      }
-    };
-
-    if (coursesList.length > 0) {
-      fetchAllPricing();
-    }
-
-  }, [coursesList]);
+    loadAllData();
+  }, [cachedApiCall]);
 
   // Use our custom hooks for filtering and sorting
   const filteredCourses = useCoursesFilter({
     courses: coursesList,
     searchQuery,
-    selectedCourse,
     selectedCategory,
     selectedCourseType,
     sortByOption
@@ -126,10 +83,27 @@ export default function Courses() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCourse, selectedCategory, selectedCourseType, sortByOption, view]);
+  }, [searchQuery, selectedCategory, selectedCourseType, sortByOption, view]);
 
   const handleTableSort = (accessor: string, direction: 'asc' | 'desc') => {
     setTableSortConfig({ key: accessor, direction });
+  };
+
+  const handleCourseDeleted = async () => {
+    // Reload courses after deletion
+    try {
+      // Invalidate courses cache and fetch fresh data
+      invalidateRelatedCache('courses');
+      const courses = await cachedApiCall(() => getCourses(), { cacheKey: 'courses' });
+      setCoursesList(courses);
+      // Reset to first page if current page becomes empty
+      const newTotalPages = Math.ceil(courses.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('Failed to reload courses after deletion:', error);
+    }
   };
 
   if (loading) {
@@ -142,8 +116,6 @@ export default function Courses() {
       <CourseFilters
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        selectedCourse={selectedCourse}
-        setSelectedCourse={setSelectedCourse}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
         selectedCourseType={selectedCourseType}
@@ -154,7 +126,6 @@ export default function Courses() {
         setView={setView}
         courseCategoryList={courseCategoryList}
         courseTypeList={courseTypeList}
-        coursesList={coursesList}
         courseCount={filteredCourses.length}
       />
 
@@ -163,15 +134,13 @@ export default function Courses() {
         <CourseList
           view={view}
           courses={view === "list" ? sortedCurrentCourses : currentCourses}
-          courseCategoryList={courseCategoryList}
-          courseTypeList={courseTypeList}
-          pricingMap={pricingMap}
           currentPage={currentPage}
           totalPages={totalPages}
           totalCourses={filteredCourses.length}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
           onTableSort={handleTableSort}
+          onCourseDeleted={handleCourseDeleted}
         />
       </div>
     </div>

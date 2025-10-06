@@ -1,13 +1,13 @@
 import { fetchWithHeaders } from './api-client';
 import {CourseFAQsResponse} from '@/types/faqs';
 
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 
 /**
  * Fetch FAQs for a specific course
  */
 export async function getCourseFAQs(courseUuid: string): Promise<CourseFAQsResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         if (!baseUrl) {
             throw new Error('API base URL is not defined');
         }
@@ -44,7 +44,6 @@ export async function getCourseFAQs(courseUuid: string): Promise<CourseFAQsRespo
 }
 export async function updateFAQCourse(faqUuid: string, courseUuid: string): Promise<CourseFAQsResponse> {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
         if (!baseUrl) {
             throw new Error('API base URL is not defined');
         }   

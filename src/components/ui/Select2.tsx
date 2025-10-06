@@ -15,6 +15,8 @@ export type Select2Props = {
   placeholder?: string;
   className?: string;
   style?: React.CSSProperties;
+  allowCreate?: boolean;
+  onCreateOption?: (newValue: string) => void;
 };
 
 const Select2: React.FC<Select2Props> = ({
@@ -25,6 +27,8 @@ const Select2: React.FC<Select2Props> = ({
   placeholder = 'Select...',
   className = '',
   style = {},
+  allowCreate = false,
+  onCreateOption,
 }) => {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -103,6 +107,36 @@ const Select2: React.FC<Select2Props> = ({
     }
   };
 
+  const formatGroupName = (input: string): string => {
+    return input
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+  };
+
+  const handleAddNew = () => {
+    if (search.trim() && onCreateOption) {
+      const formattedValue = formatGroupName(search);
+      if (formattedValue) {
+        onCreateOption(formattedValue);
+        onChange(formattedValue);
+        setOpen(false);
+        setSearch('');
+      }
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && canAddNew) {
+      e.preventDefault();
+      handleAddNew();
+    }
+  };
+
+  const canAddNew = allowCreate && onCreateOption && search.trim() &&
+    !filteredOptions.some(opt => opt.value.toLowerCase() === formatGroupName(search));
+
   const isSelected = (option: Select2Option) => {
     if (multiple) {
       return Array.isArray(value) && value.includes(option.value);
@@ -114,7 +148,7 @@ const Select2: React.FC<Select2Props> = ({
     <div style={{ position: 'relative' }} className={className}>
       <div
         ref={selectRef}
-        className='rounded-lg border border-gray-300 bg-white px-3 py-1 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 flex items-center justify-between cursor-pointer'
+        className='rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1 shadow-sm focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600 flex items-center justify-between cursor-pointer text-gray-900 dark:text-gray-100'
         style={style}
         onClick={handleToggle}
         tabIndex={0}
@@ -129,12 +163,12 @@ const Select2: React.FC<Select2Props> = ({
               : placeholder
             : validOptions.find(opt => opt.value === value)?.label || placeholder}
         </span>
-        <ChevronDown size={18} className="ml-2 text-gray-400" />
+        <ChevronDown size={18} className="ml-2 text-gray-400 dark:text-gray-300" />
       </div>
 
       {open && typeof window !== 'undefined' && createPortal(
         <div
-          className="select2-dropdown rounded-lg border border-gray-300 bg-white shadow-lg"
+          className="select2-dropdown rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg"
           style={{
             position: 'absolute',
             top: dropdownPosition.top,
@@ -146,53 +180,50 @@ const Select2: React.FC<Select2Props> = ({
             overflowY: 'auto',
           }}
         >
-          <div style={{ position: 'sticky', top: 0, background: '#fff', zIndex: 11 }}>
+          <div style={{ position: 'sticky', top: 0, background: 'inherit', borderBottom: '1px solid #e5e7eb', zIndex: 11 }} className="dark:border-gray-600">
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search..."
-              style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderBottom: '1px solid #eee' }}
+              onKeyDown={handleKeyDown}
+              placeholder={canAddNew ? `Search or press Enter to add "${formatGroupName(search)}"` : "Search..."}
+              className="w-full p-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 outline-none"
               autoFocus
             />
           </div>
-          {filteredOptions.length === 0 && (
-            <div style={{ padding: '8px', color: '#888' }}>No options</div>
+          {filteredOptions.length === 0 && !canAddNew && (
+            <div className="p-2 text-gray-500 dark:text-gray-400">No options</div>
+          )}
+          {canAddNew && (
+            <div
+              onClick={handleAddNew}
+              className="p-2 cursor-pointer flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors border-b border-gray-200 dark:border-gray-600"
+            >
+              <span className="text-lg">+</span>
+              <span>Add &quot;{formatGroupName(search)}&quot;</span>
+            </div>
           )}
           {filteredOptions.map(opt => (
             <div
               key={opt.value}
               onClick={multiple ? undefined : () => handleSelect(opt)}
-              style={{
-                padding: '8px',
-                background: isSelected(opt) ? '#e6f7ff' : '#fff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-              onMouseEnter={e => {
-                if (!isSelected(opt)) {
-                  (e.target as HTMLElement).style.background = '#f5f5f5';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isSelected(opt)) {
-                  (e.target as HTMLElement).style.background = '#fff';
-                }
-              }}
+              className={`p-2 cursor-pointer flex items-center gap-2 text-gray-900 dark:text-gray-100 transition-colors ${
+                isSelected(opt)
+                  ? 'bg-blue-50 dark:bg-blue-900/50'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
             >
               {multiple && (
                 <input
                   type="checkbox"
                   checked={isSelected(opt)}
                   onChange={() => handleSelect(opt)}
-                  style={{ marginRight: 8 }}
+                  className="mr-2"
                 />
               )}
               <span>{opt?.label || 'Unknown'}</span>
               {!multiple && isSelected(opt) && (
-                <span style={{ marginLeft: 'auto', color: '#1890ff' }}>✓</span>
+                <span className="ml-auto text-blue-600 dark:text-blue-400">✓</span>
               )}
             </div>
           ))}

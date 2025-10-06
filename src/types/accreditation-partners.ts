@@ -16,3 +16,19 @@ export interface AccreditationPartnerResponse {
     pageSize: number;
   };
 }
+
+export interface CourseAccreditationPartnerItem {
+  id: number;
+  course_id: number;
+  accreditation_partner_id: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+  AccreditationPartner: {
+    id: number;
+    uuid: string;
+    name: string;
+    image_url: string;
+    position: number;
+  };
+}

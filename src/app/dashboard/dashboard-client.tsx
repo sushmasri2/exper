@@ -31,7 +31,8 @@ import {
   MessagesSquare,
   MapPin,
   ChartCandlestick,
-  ClipboardPlus
+  ClipboardPlus,
+  Handshake
 } from "lucide-react";
 
 const navLinks = [
@@ -49,6 +50,7 @@ const navLinks = [
   },
   { href: "/dashboard/cases", label: "Cases", icon: <BriefcaseMedical /> },
   { href: "/dashboard/coupon", label: "Coupon Code", icon: <ComponentIcon /> },
+  { href: "/dashboard/partners", label: "Our Partners", icon: <Handshake /> },
   { href: "/dashboard/successstories", label: "Success Stories", icon: <CloudCheck /> },
   {
     href: "/dashboard/settings/general", label: "Settings", icon: <Settings />,
@@ -105,6 +107,8 @@ export function DashboardClient({
     if (pathname === "/dashboard/activities/discussionforum") return "Discussion Forum";
     if (pathname === "/dashboard/cases") return "Cases";
     if (pathname === "/dashboard/coupon") return "Coupon Code";
+    if (pathname === "/dashboard/partners") return "Our Partners";
+    if (pathname.startsWith("/dashboard/partners/")) return "Our Partners";
     if (pathname === "/dashboard/settings/general") return "Settings";
     if (pathname === "/dashboard/settings/eligibility") return "Eligibility ";
     if (pathname === "/dashboard/settings/coursetype") return "Course Type";
@@ -132,6 +136,15 @@ export function DashboardClient({
         <div className="mb-2">
           <Breadcrumb items={breadcrumbItems} />
           <h2 className={styles.pageTitle}>Course</h2>
+        </div>
+      );
+    }
+      if (pathname.startsWith('/dashboard/categories/') && pathname !== '/dashboard/categories') {
+      breadcrumbItems.push({ label: "Course Categories" });
+      return (
+        <div className="mb-2">
+          <Breadcrumb items={breadcrumbItems} />
+          <h2 className={styles.pageTitle}>Course Categories</h2>
         </div>
       );
     }
