@@ -10,9 +10,10 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Grid, List, Plus } from "lucide-react";
-import Link from "next/link";
 import { CourseCategory } from "@/types/coursecategory";
 import { CourseType } from "@/types/coursetype";
+import { useState } from "react";
+import { CreateCourse } from "./CreateCourse";
 
 interface CourseFiltersProps {
   searchQuery: string;
@@ -52,6 +53,8 @@ export function CourseFilters({
   courseTypeList,
   courseCount
 }: CourseFiltersProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   // Shared components
   const ViewToggle = () => (
     <div className="flex items-center bg-gray-100 rounded-lg p-1">
@@ -75,19 +78,22 @@ export function CourseFilters({
   );
 
   const CreateButton = ({ mobile = false }: { mobile?: boolean }) => (
-    <Link href="/dashboard/courses/coursestructure">
-      <Button variant="primaryBtn" size={mobile ? "sm" : "default"} className={mobile ? "" : "whitespace-nowrap"}>
-        <Plus size={16} />
-        {mobile ? (
-          <>
-            <span className="hidden sm:inline">Create New Course</span>
-            <span className="sm:hidden">Create</span>
-          </>
-        ) : (
-          <span>Create New Course</span>
-        )}
-      </Button>
-    </Link>
+    <Button
+      variant="primaryBtn"
+      onClick={() => setIsModalOpen(true)}
+      size={mobile ? "sm" : "default"}
+      className={mobile ? "" : "whitespace-nowrap"}
+    >
+      <Plus size={16} />
+      {mobile ? (
+        <>
+          <span className="hidden sm:inline">Create New Course</span>
+          <span className="sm:hidden">Create</span>
+        </>
+      ) : (
+        <span>Create New Course</span>
+      )}
+    </Button>
   );
 
   const FilterControls = () => (
@@ -101,9 +107,9 @@ export function CourseFilters({
       <Select2
         options={[
           { label: 'All Categories', value: '' },
-          ...courseCategoryList.map(cat => ({ 
-            label: cat.name, 
-            value: cat.id.toString() 
+          ...courseCategoryList.map(cat => ({
+            label: cat.name,
+            value: cat.id.toString()
           }))
         ]}
         value={selectedCategory}
@@ -115,9 +121,9 @@ export function CourseFilters({
       <Select2
         options={[
           { label: 'All Course Types', value: '' },
-          ...courseTypeList.map(type => ({ 
-            label: type.name, 
-            value: type.id.toString() 
+          ...courseTypeList.map(type => ({
+            label: type.name,
+            value: type.id.toString()
           }))
         ]}
         value={selectedCourseType}
@@ -151,41 +157,51 @@ export function CourseFilters({
   );
 
   return (
-    <div className="top-0 z-30 bg-white shadow-sm p-4 lg:p-6 rounded-lg">
-      {/* Mobile & Tablet Layout (up to xl) */}
-      <div className="block xl:hidden">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-medium text-gray-900">
-            All Courses ({courseCount})
-          </h1>
-          <div className="flex items-center gap-3">
-            <CreateButton mobile />
+    <>
+      <div className="top-0 z-30 bg-white shadow-sm p-4 lg:p-6 rounded-lg">
+        {/* Mobile & Tablet Layout (up to xl) */}
+        <div className="block xl:hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-lg font-medium text-gray-900">
+              All Courses ({courseCount})
+            </h1>
+            <div className="flex items-center gap-3">
+              <CreateButton mobile />
+              <ViewToggle />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <FilterControls />
+          </div>
+        </div>
+
+        {/* Desktop Layout (xl and above) */}
+        <div className="hidden xl:flex items-center justify-between gap-6">
+          <div className="flex-shrink-0">
+            <h1 className="text-lg font-medium text-gray-900 whitespace-nowrap">
+              All Courses ({courseCount})
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-4 flex-1 max-w-4xl">
+            <FilterControls />
+          </div>
+
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <CreateButton />
             <ViewToggle />
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <FilterControls />
-        </div>
       </div>
 
-      {/* Desktop Layout (xl and above) */}
-      <div className="hidden xl:flex items-center justify-between gap-6">
-        <div className="flex-shrink-0">
-          <h1 className="text-lg font-medium text-gray-900 whitespace-nowrap">
-            All Courses ({courseCount})
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-4 flex-1 max-w-4xl">
-          <FilterControls />
-        </div>
-        
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <CreateButton />
-          <ViewToggle />
-        </div>
-      </div>
-    </div>
+      {/* Create Course Modal */}
+      <CreateCourse
+        courseCategoryList={courseCategoryList}
+        courseTypeList={courseTypeList}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+    </>
   );
 }
