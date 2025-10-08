@@ -302,7 +302,12 @@ export default function CourseAdministration({ courseData, formData, data, actio
                         <Select2
                             options={scheduleOptions}
                             value={currentSchedule}
-                            onChange={(val: string | string[]) => typeof val === 'string' && onInputChange('schedule', val)}
+                            onChange={(val: string | string[]) => {
+                                if (typeof val === 'string') {
+                                    onInputChange('schedule', val);
+                                    validationActions.validateSingleField('schedule', val);
+                                }
+                            }}
                             placeholder="Select Schedule"
                             className="flex-1"
                             style={{ padding: '0.6rem' }}
@@ -320,6 +325,12 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="End Date"
                         />
                     </div>
+                    {/* Display schedule validation error */}
+                    {validationActions.getFieldError('schedule') && (
+                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                            {validationActions.getFieldError('schedule')}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -352,9 +363,12 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                         <ValidatedInput
                                             className="px-3 py-2"
                                             label="Number of Weeks"
+                                            type="number"
+                                            min="1"
                                             value={typeof formData.w_week === 'string' ? formData.w_week : (courseSettings?.w_week ?? "")}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                 const value = e.target.value;
+                                                // Store as string for form state but it will be converted to number when sent to API
                                                 onInputChange('w_week', value);
                                                 validationActions.validateSingleField('w_week', value);
                                             }}
@@ -367,11 +381,23 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                         <Select2
                                             options={weekdays}
                                             value={getMultiValue(formData.w_days ?? courseSettings?.w_days)}
-                                            onChange={(value) => onInputChange('w_days', Array.isArray(value) ? value : [value])}
+                                            onChange={(value) => {
+                                                const selectedValue = Array.isArray(value) ? value : [value];
+                                                // Store as comma-separated string to match the expected format
+                                                const stringValue = selectedValue.filter(v => v && v !== '').join(',');
+                                                onInputChange('w_days', stringValue);
+                                                validationActions.validateSingleField('w_days', stringValue);
+                                            }}
                                             multiple={true}
                                             placeholder="Select weekdays"
                                             style={{ padding: '0.6rem' }}
                                         />
+                                        {/* Display w_days validation error */}
+                                        {validationActions.getFieldError('w_days') && (
+                                            <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                                                {validationActions.getFieldError('w_days')}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </>

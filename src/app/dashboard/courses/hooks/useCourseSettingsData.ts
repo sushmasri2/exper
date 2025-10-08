@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Course } from "@/types/course";
 import { CourseCategory } from "@/types/coursecategory";
 import { CourseType } from "@/types/coursetype";
+import { UpdateCourse } from "@/lib/courses-api";
+import { createCourseSettings, updateCourseSettings } from "@/lib/coursesetting-api";
+import { validateFormData, ValidationResult } from "../utils/validation";
+import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { Eligibility } from "@/types/eligibility";
 import { Instructor } from "@/types/instructor";
 import { Specialty } from "@/types/specialities";
@@ -30,7 +34,7 @@ export interface CourseSettingsData {
     instructors: Instructor[];
     specialities: Specialty[];
     accreditationOptions: { label: string; value: string }[];
-
+    
     // Course-specific data
     courseSettings: CourseSetting | null;
     selectedEligibilities: string[];
@@ -39,15 +43,15 @@ export interface CourseSettingsData {
     selectedIntendedAudiences: string[];
     faqs: FAQs[];
     selectedAccreditationPartners: string[];
-
+    
     // Selected values
     selectedCategory: string;
     selectedCourseType: string;
-
+    
     // Loading states
     isLoading: boolean;
     error: string | null;
-
+    
     // Validation state
     validation: ValidationState;
 }
@@ -62,7 +66,10 @@ export interface CourseSettingsActions {
     setFAQs: (faqs: FAQs[]) => void;
     setSelectedAccreditationPartners: (partners: string[]) => void;
     setCourseSettings: (settings: CourseSetting | null) => void;
-
+    
+    // Update functions
+    updateCourseData: (formData: CourseSettingsPartialFormData, validationData?: CourseSettingsPartialFormData) => Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }>;
+    
     // Validation actions
     validation: ValidationActions;
 }
@@ -76,7 +83,7 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
     const [instructors, setInstructors] = useState<Instructor[]>([]);
     const [specialities, setSpecialities] = useState<Specialty[]>([]);
     const [accreditationOptions, setAccreditationOptions] = useState<{ label: string; value: string }[]>([]);
-
+    
     // Course-specific data states
     const [courseSettings, setCourseSettings] = useState<CourseSetting | null>(null);
     const [selectedEligibilities, setSelectedEligibilities] = useState<string[]>([]);
@@ -85,11 +92,11 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
     const [selectedIntendedAudiences, setSelectedIntendedAudiences] = useState<string[]>([]);
     const [faqs, setFAQs] = useState<FAQs[]>([]);
     const [selectedAccreditationPartners, setSelectedAccreditationPartners] = useState<string[]>([]);
-
+    
     // Selection states
     const [selectedCategory, setSelectedCategory] = useState("");
     const [selectedCourseType, setSelectedCourseType] = useState("");
-
+    
     // Loading and error states
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -133,11 +140,14 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
             }
 
             // Fetch course settings
-            const settings = await getCourseSettings(courseUuid);
-            if (!settings) {
-                console.log('No settings found, using defaults');
+            try {
+                const settings = await getCourseSettings(courseUuid);
+                if (settings) {
+                    setCourseSettings(settings);
+                }
+            } catch (err) {
+                console.error("Error fetching course settings:", err);
             }
-            setCourseSettings(settings);
 
             // Fetch instructor links
             try {
@@ -208,7 +218,7 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
-
+            
             try {
                 // Fetch all static data
                 const [
@@ -291,7 +301,171 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
         fetchData();
     }, [courseData, fetchCourseSpecificData, resetSelections]);
 
+    // Function to separate course fields from course settings fields
+    const separateFormData = useCallback((formData: CourseSettingsPartialFormData) => {
+        const courseFields = [
+            'course_name', 'title', 'course_card_title', 'one_line_description', 'short_description', 
+            'description', 'category_id', 'course_type_id', 'course_code', 'short_code', 
+            'seo_title', 'seo_description', 'seo_url', 'sem_url', 'duration', 'location', 
+            'status', 'version', 'no_price'
+        ];
 
+        const courseData: Partial<Course> = {};
+        const courseSettingsData: Partial<CourseSetting> = {};
+
+        Object.entries(formData).forEach(([key, value]) => {
+            if (courseFields.includes(key)) {
+                (courseData as Record<string, unknown>)[key] = value;
+            } else {
+                (courseSettingsData as Record<string, unknown>)[key] = value;
+            }
+        });
+
+        return { courseData, courseSettingsData };
+    }, []);
+
+    // Function to detect what has changed
+    const detectChanges = useCallback((formData: CourseSettingsPartialFormData, originalCourse?: Course | null, originalSettings?: CourseSetting | null) => {
+        const { courseData: newCourseData, courseSettingsData: newSettingsData } = separateFormData(formData);
+        
+        let courseChanged = false;
+        let settingsChanged = false;
+
+        // Check course changes
+        if (originalCourse) {
+            Object.keys(newCourseData).forEach(key => {
+                if (newCourseData[key as keyof Course] !== originalCourse[key as keyof Course]) {
+                    courseChanged = true;
+                }
+            });
+        } else if (Object.keys(newCourseData).length > 0) {
+            courseChanged = true;
+        }
+
+        // Check settings changes
+        if (originalSettings) {
+            Object.keys(newSettingsData).forEach(key => {
+                if (newSettingsData[key as keyof CourseSetting] !== originalSettings[key as keyof CourseSetting]) {
+                    settingsChanged = true;
+                }
+            });
+        } else if (Object.keys(newSettingsData).length > 0) {
+            settingsChanged = true;
+        }
+
+        return { courseChanged, settingsChanged, courseData: newCourseData, courseSettingsData: newSettingsData };
+    }, [separateFormData]);
+
+    // Main update function
+    const updateCourseData = useCallback(async (formData: CourseSettingsPartialFormData, validationData?: CourseSettingsPartialFormData): Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }> => {
+        try {
+            
+            // Separate and detect changes
+            const { courseChanged, settingsChanged, courseData: courseDataToUpdate, courseSettingsData: settingsDataToUpdate } = detectChanges(
+                formData, 
+                courseData, 
+                courseSettings
+            );
+
+            console.log('Change detection results:', {
+                courseChanged,
+                settingsChanged,
+                courseDataToUpdate,
+                settingsDataToUpdate
+            });
+
+            // Use validation data if provided, otherwise use form data
+            const dataForValidation = validationData || formData;
+            const { courseData: completeCourseData, courseSettingsData: completeSettingsData } = separateFormData(dataForValidation);
+            const validationResult = validateFormData(completeCourseData, completeSettingsData);
+            
+            console.log('Validation result:', validationResult);
+            
+            if (!validationResult.isValid) {
+                console.log('Validation failed:', validationResult.errors);
+                return {
+                    isValid: false,
+                    errors: validationResult.errors,
+                    success: false
+                };
+            }
+
+            let updatedData: Course | CourseSetting | null = null;
+
+            // Check if we have a course UUID to work with
+            if (!courseData?.uuid) {
+                return {
+                    isValid: false,
+                    errors: [{
+                        field: 'general',
+                        message: 'Course UUID is required for updates',
+                        type: 'custom'
+                    }],
+                    success: false
+                };
+            }
+
+            // Determine which APIs to call based on changes
+            if (courseChanged && settingsChanged) {
+                // Both changed - call both APIs
+                console.log('Updating both course data and settings...');
+                
+                const updatedCourse = await UpdateCourse(courseData.uuid, courseDataToUpdate);
+                updatedData = updatedCourse;
+
+                if (courseSettings) {
+                    const updatedSettings = await updateCourseSettings(courseData.uuid, settingsDataToUpdate);
+                    updatedData = updatedSettings;
+                } else {
+                    const createdSettings = await createCourseSettings(courseData.uuid, settingsDataToUpdate);
+                    updatedData = createdSettings;
+                    setCourseSettings(createdSettings);
+                }
+            } else if (courseChanged && !settingsChanged) {
+                // Only course changed
+                console.log('Updating course data only...');
+                updatedData = await UpdateCourse(courseData.uuid, courseDataToUpdate);
+            } else if (!courseChanged && settingsChanged) {
+                // Only settings changed
+                console.log('Updating course settings only...',courseData.uuid);
+                console.log('Course settings exist, updating...',courseSettings);
+                if (courseSettings) {
+                    updatedData = await updateCourseSettings(courseData.uuid, settingsDataToUpdate);
+                } else {
+                    updatedData = await createCourseSettings(courseData.uuid, settingsDataToUpdate);
+                    setCourseSettings(updatedData);
+                }
+            } else {
+                // No changes detected
+                return {
+                    isValid: true,
+                    errors: [],
+                    success: true,
+                    data: undefined
+                };
+            }
+
+            return {
+                isValid: true,
+                errors: [],
+                success: true,
+                data: updatedData || undefined
+            };
+
+        } catch (error) {
+            console.error('Error updating course data:', error);
+            
+            return {
+                isValid: false,
+                errors: [{
+                    field: 'general',
+                    message: error instanceof Error ? error.message : 'Unknown error occurred',
+                    type: 'custom'
+                }],
+                success: false
+            };
+        }
+    }, [courseData, courseSettings, detectChanges, separateFormData]);
 
     const data: CourseSettingsData = {
         categories,
@@ -325,6 +499,7 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
         setFAQs,
         setSelectedAccreditationPartners,
         setCourseSettings,
+        updateCourseData,
         validation: validationActions,
     };
 

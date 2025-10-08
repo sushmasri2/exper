@@ -83,7 +83,7 @@ export async function updateCourseSettings(courseUuid: string, settings: Partial
 export async function createCourseSettings(courseUuid: string, settings: Partial<CourseSetting>): Promise<CourseSetting> {
     try {
         const fullUrl = `${baseUrl}/api/course-settings/`;
-        const payload = { course: courseUuid, ...settings };
+        const payload = { course_uuid: courseUuid, ...settings };
         const response = await fetchWithHeaders(fullUrl, {
             method: "POST",
             headers: {

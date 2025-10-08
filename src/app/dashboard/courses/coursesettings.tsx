@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Course } from "@/types/course";
 import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { useCourseSettingsData } from "./hooks/useCourseSettingsData";
 import { ValidationError } from "./utils/validation";
+import { success, error } from "@/lib/toast";
 import CourseInformation from "./components/coursesetting/CourseInformation";
 import VisualAssets from "./components/coursesetting//VisualAssets";
 import CourseContent from "./components/coursesetting//CourseContent";
@@ -32,8 +33,10 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
     const [openItems, setOpenItems] = useState<string[]>([]);
     const [formData, setFormData] = useState<CourseSettingsPartialFormData>({
-        ...courseData,
+        // Start with empty form data - only include user interactions
     });
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
     // Use the custom hook for data fetching
     const [data, actions] = useCourseSettingsData(courseData);
@@ -47,11 +50,99 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         }
     };
 
+    // Function to check if there are any changes from original data
+    const checkForChanges = useCallback((newFormData: CourseSettingsPartialFormData) => {
+        if (!courseData) {
+            // For new courses, any non-empty field is considered a change
+            const hasAnyData = Object.values(newFormData).some(value => 
+                value !== null && value !== undefined && value !== '' && 
+                (Array.isArray(value) ? value.length > 0 : true)
+            );
+            return hasAnyData;
+        }
+
+        // For existing courses, compare with original data
+        const originalData = { ...courseData };
+        
+        // Check if any field has changed
+        for (const [key, value] of Object.entries(newFormData)) {
+            const originalValue = originalData[key as keyof Course];
+            if (value !== originalValue) {
+                return true;
+            }
+        }
+        
+        return false;
+    }, [courseData]);
+
+    // Only merge essential data when course settings become available
+    useEffect(() => {
+        if (data.courseSettings && !data.isLoading) {
+            setFormData(prevFormData => {
+                const mergedData = { ...prevFormData };
+                
+                // Only merge fields that are essential for form display/functionality
+                // Don't automatically merge all course settings to avoid validation issues
+                
+                // Add selected dropdown values
+                if (data.selectedCategory && !mergedData.category_id) {
+                    const category = data.categories.find(cat => cat.name === data.selectedCategory);
+                    if (category) {
+                        mergedData.category_id = category.id;
+                    }
+                }
+                if (data.selectedCourseType && !mergedData.course_type_id) {
+                    const courseType = data.courseTypes.find(ct => ct.name === data.selectedCourseType);
+                    if (courseType) {
+                        mergedData.course_type_id = courseType.id;
+                    }
+                }
+                
+                return mergedData;
+            });
+        }
+    }, [data.courseSettings, data.isLoading, data.categories, data.courseTypes, data.selectedCategory, data.selectedCourseType]);
+
+    // Check for initial changes when component mounts or data changes
+    useEffect(() => {
+        const initialChanges = checkForChanges(formData);
+        setHasChanges(initialChanges);
+    }, [formData, courseData, checkForChanges]);
+
     const handleInputChange = (
         field: keyof CourseSettingsPartialFormData,
         value: string | number | boolean | string[]
     ) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        // Clear any existing validation error for this field when user starts typing
+        const fieldName = String(field);
+        
+        if (actions.validation.hasFieldError(fieldName)) {
+            actions.validation.clearFieldError(fieldName);
+        }
+
+        const updatedFormData = { ...formData, [field]: value };
+        setFormData(updatedFormData);
+        
+        // Check for changes and update hasChanges state
+        const changesDetected = checkForChanges(updatedFormData);
+        setHasChanges(changesDetected);
+    };
+
+    // Helper function to determine what's being updated for better button text
+    const getUpdateButtonText = () => {
+        if (isUpdating) {
+            return !courseData ? "Publishing..." : "Updating...";
+        }
+        
+        if (!hasChanges) {
+            return !courseData ? "No Changes to Publish" : "No Changes";
+        }
+        
+        if (!courseData) {
+            return "Publish Course";
+        }
+        
+        return "Update Course";
     };
 
     // Map fields to their accordion sections for focusing
@@ -77,6 +168,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         'course_start_date': 'course-administration',
         'end_date': 'course-administration',
         'schedule': 'course-administration',
+        'w_days': 'course-administration',
         'accreditation': 'accreditation-compliance',
         'financial_aid': 'accreditation-compliance',
         'is_kyc_required': 'analytics-access-control',
@@ -116,38 +208,237 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         }
     };
 
-    // Handle publish/update course button click
-    const handlePublishUpdate = () => {
+    // Get form data for validation (only fields user has interacted with)
+    const getFormDataForValidation = useCallback((): CourseSettingsPartialFormData => {
+        // Only include fields that are in formData (user has interacted with)
+        const validationData = { ...formData };
+        
+        // Add essential dropdown selections that are part of the form interaction
+        if (data.selectedCategory && !validationData.category_id) {
+            const category = data.categories.find(cat => cat.name === data.selectedCategory);
+            if (category) {
+                validationData.category_id = category.id;
+            }
+        }
+        if (data.selectedCourseType && !validationData.course_type_id) {
+            const courseType = data.courseTypes.find(ct => ct.name === data.selectedCourseType);
+            if (courseType) {
+                validationData.course_type_id = courseType.id;
+            }
+        }
+        
+        return validationData;
+    }, [formData, data.selectedCategory, data.selectedCourseType, data.categories, data.courseTypes]);
 
-        // Validate all form data
-        const validationResult = actions.validation.validateForm(formData, data.courseSettings || undefined);
+    // Get complete data for API submission (includes all displayed values)
+    const getCompleteFormData = useCallback((): CourseSettingsPartialFormData => {
+        const completeData = { ...formData };
+        
+        // Add all displayed values for API submission
+        // Course Information fields
+        if (!completeData.course_name && courseData?.course_name) {
+            completeData.course_name = courseData.course_name;
+        }
+        if (!completeData.course_card_title && courseData?.course_card_title) {
+            completeData.course_card_title = courseData.course_card_title;
+        }
+        if (!completeData.title && courseData?.title) {
+            completeData.title = courseData.title;
+        }
+        if (!completeData.short_code && courseData?.short_code) {
+            completeData.short_code = courseData.short_code;
+        }
+        if (!completeData.course_code && courseData?.course_code && typeof courseData.course_code === 'string') {
+            completeData.course_code = courseData.course_code;
+        }
+        if (!completeData.one_line_description && courseData?.one_line_description) {
+            completeData.one_line_description = courseData.one_line_description;
+        }
+        
+        // Add course settings data if available
+        if (data.courseSettings) {
+            if (!completeData.overview && data.courseSettings.overview) {
+                completeData.overview = data.courseSettings.overview;
+            }
+            if (!completeData.course_demo_url && data.courseSettings.course_demo_url) {
+                completeData.course_demo_url = data.courseSettings.course_demo_url;
+            }
+            if (!completeData.course_demo_mobile_url && data.courseSettings.course_demo_mobile_url) {
+                completeData.course_demo_mobile_url = data.courseSettings.course_demo_mobile_url;
+            }
+            if (!completeData.banner_alt_tag && data.courseSettings.banner_alt_tag) {
+                completeData.banner_alt_tag = data.courseSettings.banner_alt_tag;
+            }
+            if (!completeData.schedule && data.courseSettings.schedule) {
+                completeData.schedule = data.courseSettings.schedule;
+            }
+            if ((completeData.w_days === undefined || completeData.w_days === null) && data.courseSettings.w_days) {
+                completeData.w_days = data.courseSettings.w_days;
+            }
+            if (completeData.is_preferred_course === undefined && data.courseSettings.is_preferred_course !== undefined) {
+                completeData.is_preferred_course = data.courseSettings.is_preferred_course;
+            }
+            if (completeData.is_kyc_required === undefined && data.courseSettings.is_kyc_required !== undefined) {
+                completeData.is_kyc_required = data.courseSettings.is_kyc_required;
+            }
+            if (completeData.enable_contact_programs === undefined && data.courseSettings.enable_contact_programs !== undefined) {
+                completeData.enable_contact_programs = data.courseSettings.enable_contact_programs;
+            }
+            if (completeData.enable_index_tag === undefined && data.courseSettings.enable_index_tag !== undefined) {
+                completeData.enable_index_tag = data.courseSettings.enable_index_tag;
+            }
+        }
+        
+        // Add selected dropdown values
+        if (data.selectedCategory && !completeData.category_id) {
+            const category = data.categories.find(cat => cat.name === data.selectedCategory);
+            if (category) {
+                completeData.category_id = category.id;
+            }
+        }
+        if (data.selectedCourseType && !completeData.course_type_id) {
+            const courseType = data.courseTypes.find(ct => ct.name === data.selectedCourseType);
+            if (courseType) {
+                completeData.course_type_id = courseType.id;
+            }
+        }
+        
+        // Preserve existing IDs from courseData
+        if (!completeData.category_id && courseData?.category_id) {
+            completeData.category_id = courseData.category_id;
+        }
+        if (!completeData.course_type_id && courseData?.course_type_id) {
+            completeData.course_type_id = courseData.course_type_id;
+        }
+        
+        // Convert data types to match backend expectations
+        const transformedData = { ...completeData };
+        
+        // Helper function to convert to boolean
+        const toBoolean = (value: unknown): boolean => {
+            return value === '1' || value === 1 || value === 'true' || value === true;
+        };
+        
+        // Helper function to convert to integer
+        const toInteger = (value: unknown): number | undefined => {
+            if (value && typeof value === 'string' && !isNaN(Number(value))) {
+                return parseInt(value, 10);
+            }
+            if (typeof value === 'number') {
+                return Math.floor(value);
+            }
+            return undefined;
+        };
 
-        if (!validationResult.isValid) {
-            console.error("Validation failed with errors:", validationResult.errors);
-
-            // Focus on first error field
-            focusOnFirstError(validationResult.errors);
-
-            // Display error summary in console for debugging
-            console.log("Validation errors by field:");
-            validationResult.errors.forEach(error => {
-                console.log(`- ${error.field}: ${error.message}`);
-            });
-
-            return;
+        // Transform boolean fields
+        if (transformedData.is_preferred_course !== undefined) {
+            (transformedData as Record<string, unknown>).is_preferred_course = toBoolean(transformedData.is_preferred_course);
+        }
+        if (transformedData.is_kyc_required !== undefined) {
+            (transformedData as Record<string, unknown>).is_kyc_required = toBoolean(transformedData.is_kyc_required);
+        }
+        if (transformedData.enable_contact_programs !== undefined) {
+            (transformedData as Record<string, unknown>).enable_contact_programs = toBoolean(transformedData.enable_contact_programs);
+        }
+        if (transformedData.enable_index_tag !== undefined) {
+            (transformedData as Record<string, unknown>).enable_index_tag = toBoolean(transformedData.enable_index_tag);
         }
 
-        // If validation passes, show success message
-        console.log("✅ Validation passed! Course data is valid.");
-        console.log("Form data:", formData);
-        console.log("Course settings:", data.courseSettings);
+        // Transform numeric fields
+        const numericResult = toInteger(transformedData.w_week);
+        if (numericResult !== undefined) {
+            (transformedData as Record<string, unknown>).w_week = numericResult;
+        }
 
-        // Here you would typically call the API to save/update the course
-        // For now, just log success
-        if (!courseData) {
-            console.log("🚀 Course would be published successfully!");
+        // Ensure w_days is always a string (comma-separated)
+        if (transformedData.w_days !== undefined) {
+            const wDaysValue = transformedData.w_days;
+            console.log('🔍 w_days before transformation:', wDaysValue, 'type:', typeof wDaysValue);
+            
+            if (Array.isArray(wDaysValue)) {
+                (transformedData as Record<string, unknown>).w_days = wDaysValue.join(',');
+                console.log('✅ w_days converted from array to string:', wDaysValue.join(','));
+            } else if (typeof wDaysValue !== 'string') {
+                (transformedData as Record<string, unknown>).w_days = String(wDaysValue);
+                console.log('✅ w_days converted to string:', String(wDaysValue));
+            } else {
+                console.log('✅ w_days is already a string:', wDaysValue);
+            }
         } else {
-            console.log("✏️ Course would be updated successfully!");
+            console.log('⚠️ w_days is undefined');
+        }
+
+        return transformedData;
+    }, [formData, courseData, data]);
+
+    // Handle publish/update course button click
+    const handlePublishUpdate = async () => {
+        if (isUpdating) return; // Prevent multiple submissions
+        
+        setIsUpdating(true);
+        
+        try {
+            // Get data for validation (only user-modified fields)
+            const validationFormData = getFormDataForValidation();
+            console.log('🔍 Validation data (user interactions only):', Object.keys(validationFormData));
+            
+            // Get complete form data for API submission (all displayed values)
+            const completeFormData = getCompleteFormData();
+            console.log('🔍 Complete data (for API submission):', Object.keys(completeFormData));
+            
+            // Use validation data for validation, complete data for submission
+            const result = await actions.updateCourseData(completeFormData, validationFormData);
+
+            if (!result.isValid || !result.success) {
+                console.error("❌ Update failed with errors:", result.errors);
+                // Debug log for troubleshooting
+                console.log("� FormData validation errors:", result.errors.map(err => `${err.field}: ${err.message}`));
+
+                // Set validation errors in the form validation system
+                actions.validation.setErrors(result.errors);
+
+                // Show error toast with first error message
+                const firstError = result.errors[0];
+                if (firstError) {
+                    error(`${firstError.message}`);
+                } else {
+                    error("Please fix the validation errors and try again.");
+                }
+
+                // Focus on first error field
+                focusOnFirstError(result.errors);
+
+                // Display error summary in console for debugging
+                console.log("Validation/Update errors by field:");
+                result.errors.forEach(err => {
+                    console.log(`- ${err.field}: ${err.message}`);
+                });
+
+                return;
+            }
+
+            // If update succeeds, show success message
+            console.log("✅ Course updated successfully!");
+            console.log("Updated data:", result.data);
+
+            // Clear any existing validation errors since update was successful
+            actions.validation.clearErrors();
+
+            if (!courseData) {
+                console.log("🚀 Course published successfully!");
+                success("Course published successfully!");
+            } else {
+                console.log("✏️ Course updated successfully!");
+                success("Course updated successfully!");
+            }
+            
+            // TODO: Optionally redirect to course list or refresh current data
+
+        } catch (err) {
+            console.error("❌ Unexpected error during update:", err);
+            error("An error occurred while updating the course. Please try again.");
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -270,13 +561,13 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
             </Accordion>
 
             <div className="flex justify-end">
-                <Button className="mt-4" variant="secondary">Save as Draft</Button>
                 <Button
                     className="mt-4 ml-2"
                     variant="primaryBtn"
                     onClick={handlePublishUpdate}
+                    disabled={isUpdating || !hasChanges}
                 >
-                    {!courseData ? "Publish Course" : "Update Course"}
+                    {getUpdateButtonText()}
                 </Button>
             </div>
         </div>

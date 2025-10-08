@@ -198,7 +198,7 @@ export async function getPaginatedCourses(params: CoursesFilterParams = {}): Pro
   }
 }
 
-async function _UpdateCourse(courseUuid: string): Promise<Course> {
+async function _UpdateCourse(courseUuid: string, courseData?: Partial<Course>): Promise<Course> {
   try {
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
@@ -212,6 +212,7 @@ async function _UpdateCourse(courseUuid: string): Promise<Course> {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
+      body: courseData ? JSON.stringify(courseData) : undefined,
       // Remove credentials if not needed
     });
     if (!response.ok) {

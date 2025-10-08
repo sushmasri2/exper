@@ -165,6 +165,29 @@ export default function AnalyticsAccessControl({
                     )}
                 </div>
                 <div>
+                    <label className="text-lg font-medium m-2">Enable Index Tag</label>
+                    <Select2
+                        options={[
+                            { label: 'Yes', value: '1' },
+                            { label: 'No', value: '0' },
+                        ]}
+                        value={typeof formData?.enable_index_tag === 'string' ? formData.enable_index_tag : (courseSettings ? String(courseSettings.enable_index_tag) : '')}
+                        onChange={(val: string | string[]) => {
+                            if (typeof val === 'string' && (val === '1' || val === '0')) {
+                                onInputChange('enable_index_tag' as keyof Course, val);
+                                validationActions.validateSingleField('enable_index_tag', val);
+                            }
+                        }}
+                        placeholder="Select Yes or No"
+                        style={{ padding: '0.6rem' }}
+                    />
+                    {validationActions.getFieldError('enable_index_tag') && (
+                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                            {validationActions.getFieldError('enable_index_tag')}
+                        </p>
+                    )}
+                </div>
+                <div>
                     <label className="text-lg font-medium m-2">Intended Audience</label>
                     <Select2
                         options={[
