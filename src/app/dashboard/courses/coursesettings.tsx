@@ -75,33 +75,10 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         return false;
     }, [courseData]);
 
-    // Only merge essential data when course settings become available
-    useEffect(() => {
-        if (data.courseSettings && !data.isLoading) {
-            setFormData(prevFormData => {
-                const mergedData = { ...prevFormData };
-                
-                // Only merge fields that are essential for form display/functionality
-                // Don't automatically merge all course settings to avoid validation issues
-                
-                // Add selected dropdown values
-                if (data.selectedCategory && !mergedData.category_id) {
-                    const category = data.categories.find(cat => cat.name === data.selectedCategory);
-                    if (category) {
-                        mergedData.category_id = category.id;
-                    }
-                }
-                if (data.selectedCourseType && !mergedData.course_type_id) {
-                    const courseType = data.courseTypes.find(ct => ct.name === data.selectedCourseType);
-                    if (courseType) {
-                        mergedData.course_type_id = courseType.id;
-                    }
-                }
-                
-                return mergedData;
-            });
-        }
-    }, [data.courseSettings, data.isLoading, data.categories, data.courseTypes, data.selectedCategory, data.selectedCourseType]);
+    // Don't automatically merge any data - let formData remain empty until user interactions
+    // The form components will display existing data using fallback patterns like:
+    // value={formData.field || courseData?.field || ""}
+    // This way we can distinguish between user interactions and display data
 
     // Check for initial changes when component mounts or data changes
     useEffect(() => {
@@ -210,25 +187,15 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
 
     // Get form data for validation (only fields user has interacted with)
     const getFormDataForValidation = useCallback((): CourseSettingsPartialFormData => {
-        // Only include fields that are in formData (user has interacted with)
+        // Only include fields that are actually in formData (user has modified)
+        // Don't automatically add dropdown values unless user specifically changed them
         const validationData = { ...formData };
         
-        // Add essential dropdown selections that are part of the form interaction
-        if (data.selectedCategory && !validationData.category_id) {
-            const category = data.categories.find(cat => cat.name === data.selectedCategory);
-            if (category) {
-                validationData.category_id = category.id;
-            }
-        }
-        if (data.selectedCourseType && !validationData.course_type_id) {
-            const courseType = data.courseTypes.find(ct => ct.name === data.selectedCourseType);
-            if (courseType) {
-                validationData.course_type_id = courseType.id;
-            }
-        }
+        console.log('📋 Raw formData for validation:', formData);
+        console.log('📋 Keys in formData:', Object.keys(formData));
         
         return validationData;
-    }, [formData, data.selectedCategory, data.selectedCourseType, data.categories, data.courseTypes]);
+    }, [formData]);
 
     // Get complete data for API submission (includes all displayed values)
     const getCompleteFormData = useCallback((): CourseSettingsPartialFormData => {
@@ -380,14 +347,25 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         try {
             // Get data for validation (only user-modified fields)
             const validationFormData = getFormDataForValidation();
-            console.log('🔍 Validation data (user interactions only):', Object.keys(validationFormData));
+            console.log('🔍 Validation data (user interactions only):', validationFormData);
+            console.log('🔍 Validation data keys:', Object.keys(validationFormData));
             
             // Get complete form data for API submission (all displayed values)
             const completeFormData = getCompleteFormData();
             console.log('🔍 Complete data (for API submission):', Object.keys(completeFormData));
             
-            // Use validation data for validation, complete data for submission
-            const result = await actions.updateCourseData(completeFormData, validationFormData);
+            // Skip validation if user hasn't made any changes to existing course
+            const hasUserInteractions = Object.keys(validationFormData).length > 0;
+            let result;
+            
+            if (!hasUserInteractions && courseData) {
+                // For existing courses with no user changes, skip validation
+                console.log('📋 No user interactions detected, skipping validation for existing course');
+                result = await actions.updateCourseData(completeFormData);
+            } else {
+                // Use validation data for validation, complete data for submission
+                result = await actions.updateCourseData(completeFormData);
+            }
 
             if (!result.isValid || !result.success) {
                 console.error("❌ Update failed with errors:", result.errors);

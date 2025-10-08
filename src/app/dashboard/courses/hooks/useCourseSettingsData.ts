@@ -4,7 +4,7 @@ import { CourseCategory } from "@/types/coursecategory";
 import { CourseType } from "@/types/coursetype";
 import { UpdateCourse } from "@/lib/courses-api";
 import { createCourseSettings, updateCourseSettings } from "@/lib/coursesetting-api";
-import { validateFormData, ValidationResult } from "../utils/validation";
+import { validateCourseData, ValidationResult } from "../utils/validation";
 import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { Eligibility } from "@/types/eligibility";
 import { Instructor } from "@/types/instructor";
@@ -68,7 +68,7 @@ export interface CourseSettingsActions {
     setCourseSettings: (settings: CourseSetting | null) => void;
     
     // Update functions
-    updateCourseData: (formData: CourseSettingsPartialFormData, validationData?: CourseSettingsPartialFormData) => Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }>;
+    updateCourseData: (formData: CourseSettingsPartialFormData) => Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }>;
     
     // Validation actions
     validation: ValidationActions;
@@ -357,8 +357,10 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
     }, [separateFormData]);
 
     // Main update function
-    const updateCourseData = useCallback(async (formData: CourseSettingsPartialFormData, validationData?: CourseSettingsPartialFormData): Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }> => {
+    const updateCourseData = useCallback(async (formData: CourseSettingsPartialFormData): Promise<ValidationResult & { success?: boolean; data?: Course | CourseSetting }> => {
         try {
+            console.log('Starting course update process...');
+            console.log('Form data:', formData);
             
             // Separate and detect changes
             const { courseChanged, settingsChanged, courseData: courseDataToUpdate, courseSettingsData: settingsDataToUpdate } = detectChanges(
@@ -374,10 +376,9 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
                 settingsDataToUpdate
             });
 
-            // Use validation data if provided, otherwise use form data
-            const dataForValidation = validationData || formData;
-            const { courseData: completeCourseData, courseSettingsData: completeSettingsData } = separateFormData(dataForValidation);
-            const validationResult = validateFormData(completeCourseData, completeSettingsData);
+            // Validate the complete form data (not just changed fields)
+            const { courseData: completeCourseData, courseSettingsData: completeSettingsData } = separateFormData(formData);
+            const validationResult = validateCourseData(completeCourseData, completeSettingsData);
             
             console.log('Validation result:', validationResult);
             

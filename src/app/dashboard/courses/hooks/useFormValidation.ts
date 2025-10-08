@@ -4,7 +4,7 @@ import { CourseSetting } from "@/types/coursesetting";
 import {
     ValidationError,
     ValidationResult,
-    validateFormData,
+    validateCourseData,
     getFieldError,
     hasFieldError,
     courseValidationRules,
@@ -51,7 +51,7 @@ export function useFormValidation(): [ValidationState, ValidationActions] {
             isValidating: true,
         }));
 
-        const result = validateFormData(courseData, courseSettings);
+        const result = validateCourseData(courseData, courseSettings);
 
         setValidationState(prev => ({
             ...prev,

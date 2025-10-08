@@ -26,14 +26,14 @@ export interface FieldValidationRule {
 
 // Common validation patterns
 const patterns = {
-    code: /^[A-Z0-9_-]+$/,
-    optionalCode: /^[A-Z0-9_-]*$/,
-    url: /^[a-z0-9-]*$/,
+    code: /^[A-Za-z0-9_-]+$/,  // Allow both upper and lowercase
+    optionalCode: /^[A-Za-z0-9_-]*$/,  // Allow both upper and lowercase
+    url: /^[a-zA-Z0-9\-_.~]*$/,  // More flexible URL slug pattern
     number: /^[0-9]*$/,
     positiveNumber: /^[0-9]+$/,
     httpUrl: /^(https?:\/\/)/,
     imageUrl: /^(https?:\/\/.*\.(jpg|jpeg|png|gif|webp))|(\/.*\.(jpg|jpeg|png|gif|webp))$/i,
-    urlOrPath: /^(https?:\/\/)|(\/)/,
+    urlOrPath: /^(https?:\/\/)|(\/)|^[a-zA-Z0-9\-_.~\/]*$/,  // More flexible for paths
     csvNumbers: /^[0-9]*(,[0-9]+)*$/,
 };
 
@@ -125,7 +125,7 @@ export const courseValidationRules: Record<keyof Partial<Course>, FieldValidatio
 // Validation rules for CourseSetting fields
 export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, FieldValidationRule>> = {
     banner: rule({ maxLength: 500, pattern: patterns.urlOrPath, custom: validators.imageFormat }),
-    overview: rule({ required: true, maxLength: 5000 }),
+    overview: rule({ maxLength: 5000 }),  // Not always required initially
     course_demo: rule({ maxLength: 500, custom: validators.validUrl }),
     duration_years: rule({ min: 0, pattern: patterns.number }),
     duration_months: rule({ min: 0, max: 12, pattern: patterns.number }),
@@ -134,10 +134,10 @@ export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, F
     y_day: rule({ min: 0, max: 31, pattern: patterns.number }),
     m_month: rule({ min: 0, max: 12, pattern: patterns.number }),
     m_day: rule({ min: 0, max: 31, pattern: patterns.number }),
-    w_week: rule({ min: 0, pattern: patterns.positiveNumber }),
-    w_days: rule({ required: true, custom: validators.weekDays }),
+    w_week: rule({ min: 0, pattern: patterns.number }),  // Allow 0, use number pattern instead of positiveNumber
+    w_days: rule({ custom: validators.weekDays }),  // Not required - depends on schedule type
     d_days: rule({ min: 0, pattern: patterns.number }),
-    schedule: rule({ required: true, custom: validators.schedule }),
+    schedule: rule({ custom: validators.schedule }),  // Not required initially
     end_date: rule({ custom: validators.validDate }),
     course_start_date: rule({ custom: validators.validDate }),
     accreditation: rule({ maxLength: 2000 }),
@@ -149,16 +149,16 @@ export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, F
     cohert_learning_overview: rule({ maxLength: 2000 }),
     course_demo_mobile: rule({ maxLength: 500, custom: validators.validUrl }),
     financial_aid: rule({ maxLength: 2000 }),
-    is_preferred_course: rule({ required: true, custom: validators.binaryFlag }),
+    is_preferred_course: rule({ custom: validators.binaryFlag }),  // Not always required initially
     rating: rule({ maxLength: 10 }),
     what_you_will_learn: rule({ maxLength: 5000 }),
-    course_demo_url: rule({ required: true, maxLength: 500, custom: validators.validUrl }),
-    course_demo_mobile_url: rule({ required: true, maxLength: 500, custom: validators.validUrl }),
+    course_demo_url: rule({ maxLength: 500, custom: validators.validUrl }),  // Not always required initially
+    course_demo_mobile_url: rule({ maxLength: 500, custom: validators.validUrl }),  // Not always required initially
     children_course: rule({ maxLength: 500 }),
-    is_kyc_required: rule({ required: true, custom: validators.binaryFlag }),
-    banner_alt_tag: rule({ required: true, maxLength: 255 }),
-    enable_contact_programs: rule({ required: true, custom: validators.binaryFlag }),
-    enable_index_tag: rule({ required: true, custom: validators.binaryFlag }),
+    is_kyc_required: rule({ custom: validators.binaryFlag }),  // Not always required initially
+    banner_alt_tag: rule({ maxLength: 255 }),  // Not always required initially
+    enable_contact_programs: rule({ custom: validators.binaryFlag }),  // Not always required initially
+    enable_index_tag: rule({ custom: validators.binaryFlag }),  // Not always required initially
     trending_courses_ordering: rule({ min: 0, pattern: patterns.number }),
     thumbnail_mobile: rule({ maxLength: 500, custom: (value) => value && typeof value === 'string' && !patterns.imageUrl.test(value) ? 'Must be a valid image URL' : null }),
     thumbnail_web: rule({ maxLength: 500, custom: (value) => value && typeof value === 'string' && !patterns.imageUrl.test(value) ? 'Must be a valid image URL' : null }),
@@ -199,7 +199,10 @@ const createError = (field: string, message: string, type: ValidationError['type
 
 // Validation function
 export function validateField(fieldName: string, value: unknown, rules: FieldValidationRule): ValidationError | null {
-    const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || value === '';
+    // More accurate empty check - 0 is a valid value for IDs
+    const isEmpty = value === null || value === undefined || 
+                   (typeof value === 'string' && value.trim() === '') ||
+                   (value === '' && typeof value === 'string');
 
     // Required validation
     if (rules.required && isEmpty) {
@@ -284,7 +287,9 @@ const validateData = (
 
 // Validate user interactions only (only validates fields that user has touched)
 export function validateUserInteractions(courseData: Partial<Course>, courseSettings?: Partial<CourseSetting>): ValidationResult {
-    console.log('🔍 Validating user interactions only:', Object.keys(courseData), Object.keys(courseSettings || {}));
+    console.log('🔍 Validating user interactions only:');
+    console.log('📝 Course data:', courseData);
+    console.log('📝 Settings data:', courseSettings);
 
     const errors = [
         ...validateData(courseData as Record<string, unknown>, courseValidationRules as Record<string, FieldValidationRule>, { validateOnlyPresent: true }),
