@@ -29,6 +29,7 @@ export default function CourseSettings({ courseData }: CourseSettingsProps) {
         "analytics-access-control",
     ];
 
+
     const [openItems, setOpenItems] = useState<string[]>([]);
     const [formData, setFormData] = useState<CourseSettingsPartialFormData>({
         ...courseData,

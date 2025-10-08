@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";    
 import Select2 from "@/components/ui/Select2";
 import {
   DropdownMenu,
@@ -9,11 +9,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Grid, List, Plus } from "lucide-react";
+import { ChevronDown, Grid, List, Plus, RefreshCw } from "lucide-react";
 import { CourseCategory } from "@/types/coursecategory";
 import { CourseType } from "@/types/coursetype";
-import { useState } from "react";
-import { CreateCourse } from "./CreateCourse";
+import { useState, useMemo } from "react";
+import { CreatingCourse } from "./CreateCourseModal";
 
 interface CourseFiltersProps {
   searchQuery: string;
@@ -55,8 +55,26 @@ export function CourseFilters({
 }: CourseFiltersProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Memoize category options to prevent recreation on every render
+  const categoryOptions = useMemo(() => [
+    { label: 'All Categories', value: '' },
+    ...courseCategoryList.map(cat => ({
+      label: cat.name,
+      value: cat.id.toString()
+    }))
+  ], [courseCategoryList]);
+
+  // Memoize course type options to prevent recreation on every render
+  const courseTypeOptions = useMemo(() => [
+    { label: 'All Course Types', value: '' },
+    ...courseTypeList.map(type => ({
+      label: type.name,
+      value: type.id.toString()
+    }))
+  ], [courseTypeList]);
+
   // Shared components
-  const ViewToggle = () => (
+  const ViewToggle = useMemo(() => (
     <div className="flex items-center bg-gray-100 rounded-lg p-1">
       <Button
         variant={view === "grid" ? "primaryBtn" : "ghost"}
@@ -75,7 +93,33 @@ export function CourseFilters({
         <List size={16} />
       </Button>
     </div>
-  );
+  ), [view, setView]);
+  
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setSelectedCourseType('');
+    setSortByOption('newest');
+  }
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return searchQuery !== '' || 
+           selectedCategory !== '' || 
+           selectedCourseType !== '' || 
+           sortByOption !== 'newest';
+  }, [searchQuery, selectedCategory, selectedCourseType, sortByOption]);
+
+  const resetButton = () => (
+    <Button 
+      variant="destructive" 
+      onClick={() => resetFilters()}
+      disabled={!hasActiveFilters}
+      className={!hasActiveFilters ? 'opacity-50 cursor-not-allowed' : ''}
+    >
+      <RefreshCw className="h-4 w-4" /> Reset
+    </Button>
+  )
 
   const CreateButton = ({ mobile = false }: { mobile?: boolean }) => (
     <Button
@@ -96,7 +140,7 @@ export function CourseFilters({
     </Button>
   );
 
-  const FilterControls = () => (
+  const FilterControls = useMemo(() => (
     <>
       <Input
         placeholder="Search courses..."
@@ -105,13 +149,7 @@ export function CourseFilters({
         className="rounded-full border-gray-300 w-full"
       />
       <Select2
-        options={[
-          { label: 'All Categories', value: '' },
-          ...courseCategoryList.map(cat => ({
-            label: cat.name,
-            value: cat.id.toString()
-          }))
-        ]}
+        options={categoryOptions}
         value={selectedCategory}
         onChange={val => {
           if (typeof val === 'string') setSelectedCategory(val);
@@ -119,13 +157,7 @@ export function CourseFilters({
         placeholder="Select Category"
       />
       <Select2
-        options={[
-          { label: 'All Course Types', value: '' },
-          ...courseTypeList.map(type => ({
-            label: type.name,
-            value: type.id.toString()
-          }))
-        ]}
+        options={courseTypeOptions}
         value={selectedCourseType}
         onChange={val => {
           if (typeof val === 'string') setSelectedCourseType(val);
@@ -138,7 +170,7 @@ export function CourseFilters({
             variant="outline"
             className="gap-2 rounded-lg border-gray-300 text-left justify-between"
           >
-            <span className="truncate">{sortByOption}</span>
+            <span className="truncate">{sortBy.find(s => s.value === sortByOption)?.label || sortByOption}</span>
             <ChevronDown size={16} className="flex-shrink-0" />
           </Button>
         </DropdownMenuTrigger>
@@ -146,7 +178,10 @@ export function CourseFilters({
           {sortBy.map((sortby) => (
             <DropdownMenuItem
               key={sortby.value}
-              onClick={() => setSortByOption(sortby.label)}
+              onClick={() => {
+                console.log('🎯 Sort option clicked:', sortby.value, 'from previous:', sortByOption);
+                setSortByOption(sortby.value);
+              }}
             >
               {sortby.label}
             </DropdownMenuItem>
@@ -154,7 +189,7 @@ export function CourseFilters({
         </DropdownMenuContent>
       </DropdownMenu>
     </>
-  );
+  ), [searchQuery, setSearchQuery, selectedCategory, setSelectedCategory, selectedCourseType, setSelectedCourseType, sortByOption, setSortByOption, categoryOptions, courseTypeOptions]);
 
   return (
     <>
@@ -166,13 +201,14 @@ export function CourseFilters({
               All Courses ({courseCount})
             </h1>
             <div className="flex items-center gap-3">
+              {resetButton()}
               <CreateButton mobile />
-              <ViewToggle />
+              {ViewToggle}
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <FilterControls />
+            {FilterControls}
           </div>
         </div>
 
@@ -185,18 +221,19 @@ export function CourseFilters({
           </div>
 
           <div className="flex items-center gap-4 flex-1 max-w-4xl">
-            <FilterControls />
+            {FilterControls}
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">
+            {resetButton()}
             <CreateButton />
-            <ViewToggle />
+            {ViewToggle}
           </div>
         </div>
       </div>
 
       {/* Create Course Modal */}
-      <CreateCourse
+      <CreatingCourse
         courseCategoryList={courseCategoryList}
         courseTypeList={courseTypeList}
         isOpen={isModalOpen}

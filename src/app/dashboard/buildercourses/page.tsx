@@ -100,6 +100,7 @@ function BuilderCoursesContent() {
         () => getPaginatedCourses(filterParams),
         { cacheKey }
       );
+      console.log('Fetched paginated courses:', response);
 
       setCoursesData(response);
     } catch (error) {

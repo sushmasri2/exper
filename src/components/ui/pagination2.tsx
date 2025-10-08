@@ -60,13 +60,9 @@ const getPageNumbers = (current: number, total: number): (number | "...")[] => {
 };
 
 export default function Pagination({ pagination, onPageChange }: PaginationProps) {
-  if (!pagination || pagination.totalPages === 0) return null;
+  if (!pagination || pagination.totalPages === 0 || pagination.totalPages === 1) return null;
 
   const pages = getPageNumbers(pagination.page, pagination.totalPages);
-  
-  // Debug logging
-  console.log('Pagination data:', pagination);
-  console.log('Generated pages:', pages);
 
   return (
     <div className="flex justify-center items-center gap-2 mt-4">
@@ -81,8 +77,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
         }
         onClick={() => {
           if (pagination.hasPrev) {
-            const prevUrl = pagination.links.prev || pagination.links.first;
-            onPageChange(prevUrl, pagination.page - 1);
+            onPageChange(`?page=${pagination.page - 1}`, pagination.page - 1);
           }
         }}
       >
@@ -105,17 +100,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
                 : ""
             }
             onClick={() => {
-              let url: string;
-              if (p === 1) {
-                url = pagination.links.first;
-              } else if (p === pagination.totalPages) {
-                url = pagination.links.last;
-              } else {
-                // Construct URL based on the pattern from existing links
-                const baseUrl = pagination.links.first.split('?')[0];
-                url = `${baseUrl}?page=${p}&limit=${pagination.limit}`;
-              }
-              onPageChange(url, p as number);
+              onPageChange(`?page=${p}`, p as number);
             }}
           >
             {p}
@@ -134,8 +119,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
         }
         onClick={() => {
           if (pagination.hasNext) {
-            const nextUrl = pagination.links.next || pagination.links.last;
-            onPageChange(nextUrl, pagination.page + 1);
+            onPageChange(`?page=${pagination.page + 1}`, pagination.page + 1);
           }
         }}
       >

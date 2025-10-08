@@ -328,7 +328,7 @@ const Modal = React.forwardRef<
                   {cancelText}
                 </Button>
               </DialogClose>
-                            <Button
+              <Button
                 variant={destructive ? "destructive" : confirmButtonVariant || confirmConfig?.confirmVariant || "default"}
                 onClick={handleConfirm}
                 disabled={loading || isLoading}
@@ -414,7 +414,24 @@ const Modal = React.forwardRef<
     return (
       <Dialog open={open} onOpenChange={handleOpenChange} {...props}>
         {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-        <DialogContent ref={ref} size={finalSize} className={finalClassName} aria-describedby={finalDescription ? undefined : "modal-content"}>
+        <DialogContent
+          ref={ref}
+          size={finalSize}
+          className={finalClassName}
+          aria-describedby={finalDescription ? undefined : "modal-content"}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.select2-dropdown')) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.select2-dropdown')) {
+              e.preventDefault();
+            }
+          }}
+        >
           {(finalTitle || finalDescription) && type !== "simple" && (
             <DialogHeader>
               {finalTitle && <DialogTitle>{finalTitle}</DialogTitle>}

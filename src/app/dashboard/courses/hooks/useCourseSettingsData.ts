@@ -30,7 +30,7 @@ export interface CourseSettingsData {
     instructors: Instructor[];
     specialities: Specialty[];
     accreditationOptions: { label: string; value: string }[];
-    
+
     // Course-specific data
     courseSettings: CourseSetting | null;
     selectedEligibilities: string[];
@@ -39,15 +39,15 @@ export interface CourseSettingsData {
     selectedIntendedAudiences: string[];
     faqs: FAQs[];
     selectedAccreditationPartners: string[];
-    
+
     // Selected values
     selectedCategory: string;
     selectedCourseType: string;
-    
+
     // Loading states
     isLoading: boolean;
     error: string | null;
-    
+
     // Validation state
     validation: ValidationState;
 }
@@ -62,7 +62,7 @@ export interface CourseSettingsActions {
     setFAQs: (faqs: FAQs[]) => void;
     setSelectedAccreditationPartners: (partners: string[]) => void;
     setCourseSettings: (settings: CourseSetting | null) => void;
-    
+
     // Validation actions
     validation: ValidationActions;
 }
@@ -76,7 +76,7 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
     const [instructors, setInstructors] = useState<Instructor[]>([]);
     const [specialities, setSpecialities] = useState<Specialty[]>([]);
     const [accreditationOptions, setAccreditationOptions] = useState<{ label: string; value: string }[]>([]);
-    
+
     // Course-specific data states
     const [courseSettings, setCourseSettings] = useState<CourseSetting | null>(null);
     const [selectedEligibilities, setSelectedEligibilities] = useState<string[]>([]);
@@ -85,11 +85,11 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
     const [selectedIntendedAudiences, setSelectedIntendedAudiences] = useState<string[]>([]);
     const [faqs, setFAQs] = useState<FAQs[]>([]);
     const [selectedAccreditationPartners, setSelectedAccreditationPartners] = useState<string[]>([]);
-    
+
     // Selection states
     const [selectedCategory, setSelectedCategory] = useState("");
     const [selectedCourseType, setSelectedCourseType] = useState("");
-    
+
     // Loading and error states
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -133,14 +133,11 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
             }
 
             // Fetch course settings
-            try {
-                const settings = await getCourseSettings(courseUuid);
-                if (settings) {
-                    setCourseSettings(settings);
-                }
-            } catch (err) {
-                console.error("Error fetching course settings:", err);
+            const settings = await getCourseSettings(courseUuid);
+            if (!settings) {
+                console.log('No settings found, using defaults');
             }
+            setCourseSettings(settings);
 
             // Fetch instructor links
             try {
@@ -211,7 +208,7 @@ export function useCourseSettingsData(courseData?: Course | null): [CourseSettin
         const fetchData = async () => {
             setIsLoading(true);
             setError(null);
-            
+
             try {
                 // Fetch all static data
                 const [

@@ -27,8 +27,8 @@ export default function CourseAdministration({ courseData, formData, data, actio
     ];
 
     const weekdays = [
-        { label: 'Monday', value: '1' }, { label: 'Tuesday', value: '2' }, { label: 'Wednesday', value: '3' },
-        { label: 'Thursday', value: '4' }, { label: 'Friday', value: '5' }, { label: 'Saturday', value: '6' }, { label: 'Sunday', value: '7' }
+        { label: 'Monday', value: 'Monday' }, { label: 'Tuesday', value: 'Tuesday' }, { label: 'Wednesday', value: 'Wednesday' },
+        { label: 'Thursday', value: 'Thursday' }, { label: 'Friday', value: 'Friday' }, { label: 'Saturday', value: 'Saturday' }, { label: 'Sunday', value: 'Sunday' }
     ];
     const months = [
         { label: 'January', value: '1' }, { label: 'February', value: '2' }, { label: 'March', value: '3' },
@@ -50,6 +50,66 @@ export default function CourseAdministration({ courseData, formData, data, actio
     return (
         <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    {/* Version */}
+                    <label className="block text-lg font-medium">Version</label>
+                    <ValidatedInput
+                        className="px-3 py-2"
+                        value={typeof formData.version === 'string' ? formData.version : (typeof courseData?.version === 'string' ? courseData.version : "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('version', value);
+                            validationActions.validateSingleField('version', value);
+                        }}
+                        error={validationActions.getFieldError('version')}
+                        placeholder="Enter Version"
+                    />
+                </div>
+                {/* Kite ID */  }
+                <div>
+                    <label className="block text-lg font-medium">Kite ID</label>
+                    <ValidatedInput
+                        className="px-3 py-2"
+                        value={typeof formData.kite_id === 'string' ? formData.kite_id : (typeof courseData?.kite_id === 'string' ? courseData.kite_id : "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('kite_id', value);
+                            validationActions.validateSingleField('kite_id', value);
+                        }}
+                        error={validationActions.getFieldError('kite_id')}
+                        placeholder="Enter Kite ID"
+                    />
+                </div>
+                 {/* Zoho ID */  }
+                <div>
+                    <label className="block text-lg font-medium">Zoho ID</label>
+                    <ValidatedInput
+                        className="px-3 py-2"
+                        value={typeof formData.course_zoho_id === 'string' ? formData.course_zoho_id : (typeof courseData?.course_zoho_id === 'string' ? courseData.course_zoho_id : "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('course_zoho_id', value);
+                            validationActions.validateSingleField('course_zoho_id', value);
+                        }}
+                        error={validationActions.getFieldError('course_zoho_id')}
+                        placeholder="Enter Zoho ID"
+                    />
+                </div>
+                {/* Duration */}
+                <div>
+                    <label className="block text-lg font-medium">Duration</label>
+                    <ValidatedInput
+                        className="px-3 py-2"
+                        value={typeof formData.duration === 'string' ? formData.duration : (typeof courseData?.duration === 'string' ? courseData.duration : "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('duration', value);
+                            validationActions.validateSingleField('duration', value);
+                        }}
+                        error={validationActions.getFieldError('duration')}
+                        placeholder="Enter Duration"
+                    />
+                </div>
                 {/* Specialty Type */}
                 <div>
                     <label className="text-lg font-medium m-2">Specialty Type</label>
@@ -237,7 +297,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                 </div>
                 {/* Schedule */}
                 <div>
-                    <label className="block text-lg font-medium mb-2">Course Schedule</label>
+                    <label className="block text-lg font-medium">Course Schedule</label>
                     <div className="flex gap-2">
                         <Select2
                             options={scheduleOptions}
@@ -303,7 +363,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-lg font-medium mb-2">Select Days</label>
+                                        <label className="block text-lg font-medium">Select Days</label>
                                         <Select2
                                             options={weekdays}
                                             value={getMultiValue(formData.w_days ?? courseSettings?.w_days)}

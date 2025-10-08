@@ -81,7 +81,7 @@ export function CourseGridCard({
           </div>
 
           {/* Description */}
-          <p className="text-gray-600 text-sm leading-relaxed">{course.one_line_description}</p>
+          <p className="text-gray-600 text-sm leading-relaxed line-clamp-2">{course.one_line_description}</p>
 
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-4">

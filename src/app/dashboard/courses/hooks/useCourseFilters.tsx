@@ -43,8 +43,11 @@ export function useCoursesFilter({
       result.sort((a, b) => a.course_name.localeCompare(b.course_name));
     } else if (sortByOption === "Z-A") {
       result.sort((a, b) => b.course_name.localeCompare(a.course_name));
+    } else if (sortByOption === "newest") {
+      result.sort((a, b) => b.id - a.id);  // Higher ID = newer
+    } else if (sortByOption === "oldest") {
+      result.sort((a, b) => a.id - b.id);  // Lower ID = older
     }
-
     return result;
   }, [courses, searchQuery, selectedCategory, selectedCourseType, sortByOption]);
 }

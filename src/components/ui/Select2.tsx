@@ -19,6 +19,7 @@ export type Select2Props = {
   onCreateOption?: (newValue: string) => void;
 };
 
+
 const Select2: React.FC<Select2Props> = ({
   options,
   value,
@@ -143,6 +144,45 @@ const Select2: React.FC<Select2Props> = ({
     }
     return value === option.value;
   };
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when dropdown opens
+  useEffect(() => {
+    if (open && inputRef.current) {
+      // Force focus and cursor visibility
+      const focusInput = () => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Force cursor to be visible by briefly blurring and refocusing
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.blur();
+              setTimeout(() => {
+                if (inputRef.current) {
+                  inputRef.current.focus();
+                  // Set cursor position to end
+                  const length = inputRef.current.value.length;
+                  inputRef.current.setSelectionRange(length, length);
+                }
+              }, 5);
+            }
+          }, 10);
+        }
+      };
+
+      // Multiple timing attempts
+      const timer1 = setTimeout(focusInput, 1);
+      const timer2 = setTimeout(focusInput, 50);
+      const timer3 = setTimeout(focusInput, 100);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    }
+  }, [open]);
+
 
   return (
     <div style={{ position: 'relative' }} className={className}>
@@ -169,25 +209,36 @@ const Select2: React.FC<Select2Props> = ({
       {open && typeof window !== 'undefined' && createPortal(
         <div
           className="select2-dropdown rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg"
+          onMouseDown={(e) => e.stopPropagation()} // ADD THIS - prevent dropdown close on scroll
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
           style={{
             position: 'absolute',
             top: dropdownPosition.top,
             left: dropdownPosition.left,
             width: dropdownPosition.width,
             minWidth: dropdownPosition.width,
-            zIndex: 9999,
+            zIndex: 99999,
             maxHeight: 250,
             overflowY: 'auto',
+            pointerEvents: 'auto'
           }}
         >
           <div style={{ position: 'sticky', top: 0, background: 'inherit', borderBottom: '1px solid #e5e7eb', zIndex: 11 }} className="dark:border-gray-600">
             <input
+              ref={inputRef}
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              onFocus={(e) => e.stopPropagation()}
               placeholder={canAddNew ? `Search or press Enter to add "${formatGroupName(search)}"` : "Search..."}
-              className="w-full p-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 outline-none"
+              className="w-full p-2 bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 border-0 outline-none focus:outline-none"
+              style={{ caretColor: '#2563eb' }}
               autoFocus
             />
           </div>
@@ -207,11 +258,10 @@ const Select2: React.FC<Select2Props> = ({
             <div
               key={opt.value}
               onClick={multiple ? undefined : () => handleSelect(opt)}
-              className={`p-2 cursor-pointer flex items-center gap-2 text-gray-900 dark:text-gray-100 transition-colors ${
-                isSelected(opt)
-                  ? 'bg-blue-50 dark:bg-blue-900/50'
-                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
+              className={`p-2 cursor-pointer flex items-center gap-2 text-gray-900 dark:text-gray-100 transition-colors ${isSelected(opt)
+                ? 'bg-blue-50 dark:bg-blue-900/50'
+                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
             >
               {multiple && (
                 <input

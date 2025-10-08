@@ -25,19 +25,14 @@ export default function CourseInformation({
     const {
         categories,
         courseTypes,
-        eligibilities,
-        courses,
-        courseSettings,
         selectedCategory,
         selectedCourseType,
-        selectedEligibilities,
         keywords
     } = data;
 
     const {
         setSelectedCategory,
         setSelectedCourseType,
-        setSelectedEligibilities,
         setKeywords,
         validation: validationActions
     } = actions;
@@ -79,6 +74,22 @@ export default function CourseInformation({
                     />
                 </div>
                 <div>
+                    <ValidatedInput
+                        type="text"
+                        name="title"
+                        label="Title"
+                        placeholder="Title"
+                        value={typeof formData.title === "string" ? formData.title : (courseData?.title || "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('title', value);
+                            validationActions.validateSingleField('title', value);
+                        }}
+                        error={validationActions.getFieldError('title')}
+                        required
+                    />
+                </div>
+                <div>
                     <label className="text-lg font-medium m-2">Short Code</label>
                     <ValidatedInput
                         type="text"
@@ -94,34 +105,21 @@ export default function CourseInformation({
                     />
                 </div>
                 <div>
-                    <label className="text-lg font-medium m-2">Child Course</label>
-                    <Select2
-                        options={[
-                            { label: 'Select Child Course', value: '' },
-                            ...courses
-                                .filter(c => !courseData || c.uuid !== courseData.uuid)
-                                .map(c => ({
-                                    label: c.course_name || c.title || `Course #${c.id}`,
-                                    value: c.uuid || String(c.id)
-                                }))
-                        ]}
-                        value={
-                            // First try to get from formData.child_course, then fall back to courseSettings.children_course
-                            (() => {
-                                const selectedChild = typeof formData.child_course === 'string' ? formData.child_course :
-                                    (courseSettings && typeof courseSettings.children_course === 'string' ? courseSettings.children_course : '');
-                                return selectedChild;
-                            })()
-                        }
-                        onChange={(val: string | string[]) => {
-                            if (typeof val === 'string') {
-                                onInputChange('child_course', val);
-                            }
+                    <label className="text-lg font-medium m-2">Course Code</label>
+                    <ValidatedInput
+                        type="text"
+                        placeholder="Course Code"
+                        value={typeof formData.course_code === "string" ? formData.course_code : (typeof courseData?.course_code === "string" ? courseData.course_code : "")}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            onInputChange('course_code', value);
+                            validationActions.validateSingleField('course_code', value);
                         }}
-                        placeholder="Select Child Course"
-                        style={{ padding: '0.6rem' }}
+                        error={validationActions.getFieldError('course_code')}
+                        required
                     />
                 </div>
+
                 <div>
                     <label className="text-lg font-medium m-2">Course Type</label>
                     <Select2
@@ -142,28 +140,6 @@ export default function CourseInformation({
                             {validationActions.getFieldError('course_type_id')}
                         </p>
                     )}
-                </div>
-                <div>
-                    <label className="text-lg font-medium m-2">Course Eligibility</label>
-                    <Select2
-                        options={eligibilities.length > 0 ?
-                            eligibilities.map(eligibility => ({
-                                label: eligibility.name,
-                                value: eligibility.uuid.toString()
-                            }))
-                            : []
-                        }
-                        value={selectedEligibilities}
-                        onChange={(val: string | string[]) => {
-                            if (Array.isArray(val)) {
-                                setSelectedEligibilities(val);
-                                onInputChange('eligibility_ids', val);
-                            }
-                        }}
-                        multiple={true}
-                        placeholder="Select Eligibilities"
-                        style={{ padding: '0.6rem' }}
-                    />
                 </div>
                 <div>
                     <label className="text-lg font-medium m-2">Course Category</label>
@@ -200,23 +176,38 @@ export default function CourseInformation({
                     />
                 </div>
             </div>
-
-            <div className="mb-4">
-                <ValidatedTextarea
-                    name="one_line_description"
-                    label="One Line Description"
-                    placeholder="One line description of the course"
-                    value={typeof formData.one_line_description === "string" ? formData.one_line_description : (courseData?.one_line_description || "")}
-                    error={validationActions.getFieldError('one_line_description')}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        const value = e.target.value;
-                        onInputChange('one_line_description', value);
-                        validationActions.validateSingleField('one_line_description', value);
-                    }}
-                    rows={2}
-                />
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <ValidatedTextarea
+                        name="one_line_description"
+                        label="One Line Description"
+                        placeholder="One line description of the course"
+                        value={typeof formData.one_line_description === "string" ? formData.one_line_description : (courseData?.one_line_description || "")}
+                        error={validationActions.getFieldError('one_line_description')}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                            const value = e.target.value;
+                            onInputChange('one_line_description', value);
+                            validationActions.validateSingleField('one_line_description', value);
+                        }}
+                        rows={2}
+                    />
+                </div>
+                <div>
+                    <ValidatedTextarea
+                        name="short_description"
+                        label="Short Description"
+                        placeholder="short description"
+                        value={typeof formData.short_description === "string" ? formData.short_description : (courseData?.short_description || "")}
+                        error={validationActions.getFieldError('short_description')}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                            const value = e.target.value;
+                            onInputChange('short_description', value);
+                            validationActions.validateSingleField('short_description', value);
+                        }}
+                        rows={2}
+                    />
+                </div>
             </div>
-
             <div className="mb-4">
                 <ValidatedTextarea
                     name="description"
@@ -230,22 +221,6 @@ export default function CourseInformation({
                         validationActions.validateSingleField('description', value);
                     }}
                     rows={4}
-                />
-            </div>
-
-            <div className="mb-4">
-                <ValidatedTextarea
-                    name="summary"
-                    label="Course Summary"
-                    placeholder="Course summary"
-                    value={typeof formData.summary === "string" ? formData.summary : (courseSettings?.summary || "")}
-                    error={validationActions.getFieldError('summary')}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                        const value = e.target.value;
-                        onInputChange('summary', value);
-                        validationActions.validateSingleField('summary', value);
-                    }}
-                    rows={3}
                 />
             </div>
         </div>

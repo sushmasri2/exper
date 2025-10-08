@@ -101,6 +101,7 @@ export const courseValidationRules: Record<keyof Partial<Course>, FieldValidatio
     rating: rule({ min: 0, max: 5, pattern: patterns.number, custom: validators.rating }),
     no_price: rule({ custom: validators.binaryFlag }),
     duration: rule({ maxLength: 100 }),
+    kite_id: rule({ pattern: patterns.positiveNumber }),
 };
 
 // Validation rules for CourseSetting fields

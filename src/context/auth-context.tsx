@@ -540,7 +540,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ id_token: credential }),
         credentials: 'include'
       });
-
+      
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         const errorMessage = data?.message || `Failed to authenticate with Google (${response.status})`;
@@ -548,22 +548,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return { success: false, message: errorMessage };
       }
-
+      
       const data = await response.json();
+
+      // Handle the response structure - userDetails.user contains the user data
+      const userObj = data.userDetails?.user || data.user;
+      if (!userObj) {
+        throw new Error('No user object found in response');
+      }
 
       // Create an AuthResponse from the data
       const authResponse: AuthResponse = {
         accessToken: data.accessToken || data.token || data.access_token,
         user: {
-          id: data.user_id,
-          email: data.user.email,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName,
-          avatar: data.user.avatar,
-          isGoogleAuth: data.user.isGoogleAuth,
-          lastLogin: data.user.lastLogin,
-          roles: data.user.roles,
-          permissions: data.user.permissions
+          id: userObj.id,
+          email: userObj.email,
+          firstName: userObj.firstName,
+          lastName: userObj.lastName,
+          avatar: userObj.avatar,
+          isGoogleAuth: userObj.isGoogleAuth || true, // Default to true for Google login
+          lastLogin: userObj.lastLogin,
+          roles: userObj.roles,
+          permissions: userObj.permissions
         }
       };
 

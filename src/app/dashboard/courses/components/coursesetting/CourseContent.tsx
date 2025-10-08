@@ -6,6 +6,7 @@ import { Course } from "@/types/course";
 import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
 import { ValidatedTextarea } from "../ValidatedFormComponents";
+import Select2 from "@/components/ui/Select2";
 
 interface CourseContentProps {
     courseData?: Course | null;
@@ -16,17 +17,86 @@ interface CourseContentProps {
 }
 
 export default function CourseContent({
+    courseData,
     formData,
     data,
     actions,
     onInputChange
 }: CourseContentProps) {
-    const { courseSettings, faqs } = data;
+    const { courseSettings, faqs, courses } = data;
     const { validation: validationActions } = actions;
     const [faqOpenItems, setFaqOpenItems] = useState<string[]>([]);
 
     return (
         <div className="px-5 py-3">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label className="text-lg font-medium m-2">Child Course</label>
+                    <Select2
+                        options={[
+                            { label: 'Select Child Course', value: '' },
+                            ...courses
+                                .filter(c => !courseData || c.uuid !== courseData.uuid)
+                                .map(c => ({
+                                    label: c.course_name || c.title || `Course #${c.id}`,
+                                    value: c.uuid || String(c.id)
+                                }))
+                        ]}
+                        value={
+                            // First try to get from formData.child_course, then fall back to courseSettings.children_course
+                            (() => {
+                                const selectedChild = typeof formData.child_course === 'string' ? formData.child_course :
+                                    (courseSettings && typeof courseSettings.children_course === 'string' ? courseSettings.children_course : '');
+                                return selectedChild;
+                            })()
+                        }
+                        onChange={(val: string | string[]) => {
+                            if (typeof val === 'string') {
+                                onInputChange('child_course', val);
+                            }
+                        }}
+                        placeholder="Select Child Course"
+                        style={{ padding: '0.6rem' }}
+                    />
+                </div>
+                <div>
+                    <label className="text-lg font-medium m-2">Course Eligibility</label>
+                    <Select2
+                        options={data.eligibilities.length > 0 ?
+                            data.eligibilities.map(eligibility => ({
+                                label: eligibility.name,
+                                value: eligibility.uuid.toString()
+                            }))
+                            : []
+                        }
+                        value={data.selectedEligibilities}
+                        onChange={(val: string | string[]) => {
+                            if (Array.isArray(val)) {
+                                actions.setSelectedEligibilities(val);
+                                onInputChange('eligibility_ids', val);
+                            }
+                        }}
+                        multiple={true}
+                        placeholder="Select Eligibilities"
+                        style={{ padding: '0.6rem' }}
+                    />
+                </div>
+            </div>
+            <div className="mb-4">
+                <ValidatedTextarea
+                    name="summary"
+                    label="Course Summary"
+                    placeholder="Course summary"
+                    value={typeof formData.summary === "string" ? formData.summary : (courseSettings?.summary || "")}
+                    error={validationActions.getFieldError('summary')}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        const value = e.target.value;
+                        onInputChange('summary', value);
+                        validationActions.validateSingleField('summary', value);
+                    }}
+                    rows={3}
+                />
+            </div>
             <div className="mb-4">
                 <ValidatedTextarea
                     label="Special Features"

@@ -2,11 +2,11 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import styles from './createcourse.module.css';
-import { Save, SquareArrowOutUpRight, MonitorStop, TabletSmartphone, RefreshCcw } from "lucide-react";
+import { MonitorStop, TabletSmartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Course } from "@/types/course";
-import { getCourses } from "@/lib/courses-api"; // Add this import
+import { GetCourseById } from "@/lib/courses-api";
 import { useApiCache } from "@/hooks/use-api-cache";
 import { setGlobalCacheInstance } from "@/lib/cache-utils";
 
@@ -34,7 +34,7 @@ export default function CreateCourse() {
   const router = useRouter();
   const pathname = usePathname();
   const cacheInstance = useApiCache();
-  const { cachedApiCall } = cacheInstance;
+  const { cachedApiCall, invalidateCache } = cacheInstance;
 
   // Set global cache instance for API functions to use
   setGlobalCacheInstance(cacheInstance);
@@ -45,6 +45,7 @@ export default function CreateCourse() {
   const [activeTab, setActiveTab] = useState(tabSegment);
 
   const [courseData, setCourseData] = useState<Course | null>(null);
+  const [lastCourseId, setLastCourseId] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const courseId = Number(searchParams.get("id") ?? 0);
 
@@ -61,17 +62,47 @@ export default function CreateCourse() {
   }, [tabSegment, pathname, router, courseId]);
 
   useEffect(() => {
-    if (!courseId) return;
+    if (!courseId) {
+      console.log("No courseId provided");
+      setCourseData(null);
+      setLastCourseId(null);
+      return;
+    }
 
-    cachedApiCall(() => getCourses(), { cacheKey: 'courses' })
-      .then(courses => {
-        const course = courses.find(c => c.id === courseId) || null;
-        setCourseData(course);
-      })
-      .catch(error => {
-        console.error("Error fetching courses:", error);
-      });
-  }, [courseId, cachedApiCall]);
+    console.log(`Fetching course data for ID: ${courseId}`);
+
+    const fetchCourseData = async () => {
+      try {
+        // If this is a different course ID than the last one, it might be a newly created course
+        // Force invalidate cache for this specific course to ensure fresh data
+        if (lastCourseId !== courseId) {
+          console.log(`Course ID changed from ${lastCourseId} to ${courseId}, invalidating cache`);
+          invalidateCache(`course-${courseId}`);
+          invalidateCache('courses'); // Also invalidate courses list cache
+        }
+
+        // Use the new GetCourseById function that handles UUID/ID fallback internally
+        const course = await cachedApiCall(() => GetCourseById(courseId), { 
+          cacheKey: `course-${courseId}`,
+          ttl: 5000 // Shorter TTL for individual courses to ensure fresh data
+        });
+        
+        if (course) {
+          console.log("Successfully fetched course:", course);
+          setCourseData(course);
+          setLastCourseId(courseId);
+        } else {
+          console.log("Course not found");
+          setCourseData(null);
+        }
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+        setCourseData(null);
+      }
+    };
+
+    fetchCourseData();
+  }, [courseId, cachedApiCall, invalidateCache, lastCourseId]);
   const handleTabChange = (value: string) => {
     let newUrl;
     if (courseId) {
@@ -95,11 +126,8 @@ export default function CreateCourse() {
           <h1>{courseData?.course_name || "New Course"}</h1>
         </div>
         <div className={styles.courseSectionButtons} >
-          <Button variant='glass' title="Update the Kite ID"><RefreshCcw /></Button>
           <Button variant='glass' title="Preview on Desktop"><MonitorStop /></Button>
           <Button variant='glass' title="Preview on Mobile"><TabletSmartphone /></Button>
-          <Button variant='glass' title="Draft Changes"><Save /></Button>
-          <Button variant='glass' title="Publish Course"><SquareArrowOutUpRight /></Button>
         </div>
       </div>
       <div className={styles.row}>

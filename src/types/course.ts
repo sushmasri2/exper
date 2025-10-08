@@ -62,6 +62,9 @@ export interface CoursesFilterParams {
   search?: string;
   category?: string;
   courseType?: string;
+  sortBy?: string;
+  view?: 'grid' | 'list';
+  [key: string]: string | number | undefined;
 }
 
 // Validation error types
