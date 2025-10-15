@@ -26,70 +26,67 @@ export interface FieldValidationRule {
 
 // Common validation patterns
 const patterns = {
-    code: /^[A-Za-z0-9_-]+$/,  // Allow both upper and lowercase
-    optionalCode: /^[A-Za-z0-9_-]*$/,  // Allow both upper and lowercase
-    url: /^[a-zA-Z0-9\-_.~]*$/,  // More flexible URL slug pattern
+    code: /^[A-Z0-9_-]+$/,
+    optionalCode: /^[A-Z0-9_-]*$/,
+    url: /^[a-z0-9-]*$/,
     number: /^[0-9]*$/,
     positiveNumber: /^[0-9]+$/,
     httpUrl: /^(https?:\/\/)/,
     imageUrl: /^(https?:\/\/.*\.(jpg|jpeg|png|gif|webp))|(\/.*\.(jpg|jpeg|png|gif|webp))$/i,
-    urlOrPath: /^(https?:\/\/)|(\/)|^[a-zA-Z0-9\-_.~\/]*$/,  // More flexible for paths
+    urlOrPath: /^(https?:\/\/)|(\/)/,
     csvNumbers: /^[0-9]*(,[0-9]+)*$/,
+    decimal: /^\d+(\.\d{1,2})?$/,
 };
 
 // Common validators
 const validators = {
-    binaryFlag: (value: unknown) => {
-        if (value === undefined || value === null) return null;
-        return (value !== true && value !== false && value !== 0 && value !== 1 && value !== '0' && value !== '1') ? 'Must be Yes or No' : null;
-    },
 
-    validId: (value: unknown) => {
-        // Allow 0 as a valid ID, and check if it's a valid number or numeric string
-        if (value === undefined || value === null || value === '') return 'Please select a valid option';
-        const numValue = Number(value);
-        return isNaN(numValue) ? 'Please select a valid option' : null;
-    },
+    validId: (value: unknown) =>
+        !value || isNaN(Number(value)) ? 'Please select a valid option' : null,
 
-    validDate: (value: unknown) => {
-        if (!value) return null; // Empty dates are allowed unless field is required
-        if (typeof value !== 'string') return 'Must be a valid date';
-        const date = new Date(value);
-        return isNaN(date.getTime()) ? 'Must be a valid date' : null;
-    },
+    validDate: (value: unknown) =>
+        value && typeof value === 'string' && isNaN(Date.parse(value)) ? 'Must be a valid date' : null,
 
-    validUrl: (value: unknown) => {
-        if (!value) return null; // Empty URLs are allowed unless field is required
-        if (typeof value !== 'string') return 'Must be a valid URL';
-        // Accept both absolute URLs and relative paths
-        return (patterns.httpUrl.test(value) || value.startsWith('/')) ? null : 'Must be a valid URL or path';
-    },
+    validUrl: (value: unknown) =>
+        value && typeof value === 'string' && !patterns.httpUrl.test(value) ? 'Must be a valid URL' : null,
 
-    imageFormat: (value: unknown) => {
-        if (!value) return null; // Empty images are allowed unless field is required
-        if (typeof value !== 'string') return 'Must be a valid image format';
-        // More flexible image validation - accept URLs and paths
-        return value.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? null : 'Must be a valid image format (jpg, jpeg, png, gif, webp)';
-    },
+    imageFormat: (value: unknown) =>
+        value && typeof value === 'string' && !value.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'Must be a valid image format' : null,
 
     rating: (value: unknown) => {
+        if (!value) return null;
+        const num = Number(value);
+        if (isNaN(num) || num < 0 || num > 5) {
+            return 'Rating must be between 0 and 5';
+        }
+        // Optional: Check decimal places
         const str = String(value);
-        return str && (!patterns.number.test(str) || Number(str) > 5) ? 'Rating must be between 0 and 5' : null;
+        if (str.includes('.') && str.split('.')[1].length > 2) {
+            return 'Rating can have at most 2 decimal places';
+        }
+        return null;
     },
 
     weekDays: (value: unknown) => {
         if (value && typeof value === 'string') {
-            const validDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            const days = value.split(',').map(d => d.trim());
-            const invalidDays = days.filter(day => !validDayNames.includes(day));
-            return invalidDays.length > 0 ? 'Must be comma-separated valid weekday names (Monday, Tuesday, etc.)' : null;
+            const parts = value.split(',').map(p => p.trim());
+            const validWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            
+            // Check if all parts are valid weekday names (case-insensitive)
+            const allValid = parts.every(part => {
+                return validWeekdays.some(validDay => validDay.toLowerCase() === part.toLowerCase());
+            });
+            
+            if (!allValid) {
+                return 'Must be comma-separated weekday names (Monday,Tuesday,Wednesday,etc.)';
+            }
         }
         return null;
     },
 
     schedule: (value: unknown) =>
-        value && typeof value === 'string' && !['daily', 'weekly', 'monthly', 'yearly', 'self-paced'].includes(value.toLowerCase())
-            ? 'Must be one of: daily, weekly, monthly, yearly, self-paced' : null,
+        value && typeof value === 'string' && !['daily', 'weekly', 'monthly', 'self-paced'].includes(value.toLowerCase())
+            ? 'Must be one of: daily, weekly, monthly, self-paced' : null,
 
     speciality: (value: unknown) =>
         value && typeof value === 'string' && !['doctors', 'nurses', 'others'].includes(value.toLowerCase())
@@ -109,24 +106,22 @@ export const courseValidationRules: Record<keyof Partial<Course>, FieldValidatio
     description: rule({ minLength: 50, maxLength: 5000 }),
     category_id: rule({ required: true, custom: validators.validId }),
     course_type_id: rule({ required: true, custom: validators.validId }),
-    course_code: rule({ required: true, minLength: 3, maxLength: 50, pattern: patterns.code }),
-    short_code: rule({ required: true, maxLength: 20, pattern: patterns.optionalCode }),
     seo_title: rule({ maxLength: 255 }),
     seo_description: rule({ maxLength: 500 }),
     seo_url: rule({ pattern: patterns.url, maxLength: 255 }),
     sem_url: rule({ pattern: patterns.url, maxLength: 255 }),
+    cpd_points: rule({ min: 0, pattern: patterns.positiveNumber }),
+    active_learners: rule({ min: 0, pattern: patterns.number }),
+    rating_count: rule({ min: 0, pattern: patterns.positiveNumber }),
+    rating: rule({ min: 0, max: 5, pattern: patterns.decimal, custom: validators.rating }),
     duration: rule({ maxLength: 100 }),
-    location: rule({ maxLength: 255 }),
-    status: rule({ custom: validators.binaryFlag }),
-    version: rule({ maxLength: 20 }),
-    no_price: rule({ custom: validators.binaryFlag }),
+    kite_id: rule({ pattern: patterns.positiveNumber }),
 };
 
 // Validation rules for CourseSetting fields
-export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, FieldValidationRule>> = {
+export const courseSettingValidationRules: Record<string, FieldValidationRule> = {
     banner: rule({ maxLength: 500, pattern: patterns.urlOrPath, custom: validators.imageFormat }),
-    overview: rule({ maxLength: 5000 }),  // Not always required initially
-    course_demo: rule({ maxLength: 500, custom: validators.validUrl }),
+    overview: rule({ required: true, maxLength: 5000 }),
     duration_years: rule({ min: 0, pattern: patterns.number }),
     duration_months: rule({ min: 0, max: 12, pattern: patterns.number }),
     duration_days: rule({ min: 0, max: 365, pattern: patterns.number }),
@@ -134,10 +129,10 @@ export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, F
     y_day: rule({ min: 0, max: 31, pattern: patterns.number }),
     m_month: rule({ min: 0, max: 12, pattern: patterns.number }),
     m_day: rule({ min: 0, max: 31, pattern: patterns.number }),
-    w_week: rule({ min: 0, pattern: patterns.number }),  // Allow 0, use number pattern instead of positiveNumber
-    w_days: rule({ custom: validators.weekDays }),  // Not required - depends on schedule type
+    w_week: rule({ min: 0, pattern: patterns.number }),
+    w_days: rule({ custom: validators.weekDays }),
     d_days: rule({ min: 0, pattern: patterns.number }),
-    schedule: rule({ custom: validators.schedule }),  // Not required initially
+    schedule: rule({  custom: validators.schedule }),
     end_date: rule({ custom: validators.validDate }),
     course_start_date: rule({ custom: validators.validDate }),
     accreditation: rule({ maxLength: 2000 }),
@@ -145,25 +140,18 @@ export const courseSettingValidationRules: Partial<Record<keyof CourseSetting, F
     extendedvalidity_months: rule({ min: 0, max: 12, pattern: patterns.number }),
     extendedvalidity_days: rule({ min: 0, max: 365, pattern: patterns.number }),
     brochure: rule({ maxLength: 500, custom: validators.validUrl }),
-    cohert_learning_image: rule({ maxLength: 500, custom: validators.imageFormat }),
-    cohert_learning_overview: rule({ maxLength: 2000 }),
-    course_demo_mobile: rule({ maxLength: 500, custom: validators.validUrl }),
     financial_aid: rule({ maxLength: 2000 }),
-    is_preferred_course: rule({ custom: validators.binaryFlag }),  // Not always required initially
-    rating: rule({ maxLength: 10 }),
+    is_preferred_course: rule({ required: true }),
     what_you_will_learn: rule({ maxLength: 5000 }),
-    course_demo_url: rule({ maxLength: 500, custom: validators.validUrl }),  // Not always required initially
-    course_demo_mobile_url: rule({ maxLength: 500, custom: validators.validUrl }),  // Not always required initially
-    children_course: rule({ maxLength: 500 }),
-    is_kyc_required: rule({ custom: validators.binaryFlag }),  // Not always required initially
-    banner_alt_tag: rule({ maxLength: 255 }),  // Not always required initially
-    enable_contact_programs: rule({ custom: validators.binaryFlag }),  // Not always required initially
-    enable_index_tag: rule({ custom: validators.binaryFlag }),  // Not always required initially
-    trending_courses_ordering: rule({ min: 0, pattern: patterns.number }),
+    course_demo_url: rule({ required: true, maxLength: 500, custom: validators.validUrl }),
+    course_demo_mobile_url: rule({ required: true, maxLength: 500, custom: validators.validUrl }),
+    is_kyc_required: rule({ required: true }),
+    banner_alt_tag: rule({ required: true, maxLength: 255 }),
+    enable_contact_programs: rule({ required: true}),
+    enable_index_tag: rule({ required: true }),
     thumbnail_mobile: rule({ maxLength: 500, custom: (value) => value && typeof value === 'string' && !patterns.imageUrl.test(value) ? 'Must be a valid image URL' : null }),
     thumbnail_web: rule({ maxLength: 500, custom: (value) => value && typeof value === 'string' && !patterns.imageUrl.test(value) ? 'Must be a valid image URL' : null }),
     partner_coursecode: rule({ maxLength: 100, pattern: patterns.optionalCode }),
-    speciality_courses_ordering: rule({ min: 0, pattern: patterns.number }),
     disclosure: rule({ maxLength: 2000 }),
     summary: rule({ maxLength: 1000 }),
     speciality_type: rule({ custom: validators.speciality }),
@@ -199,10 +187,7 @@ const createError = (field: string, message: string, type: ValidationError['type
 
 // Validation function
 export function validateField(fieldName: string, value: unknown, rules: FieldValidationRule): ValidationError | null {
-    // More accurate empty check - 0 is a valid value for IDs
-    const isEmpty = value === null || value === undefined || 
-                   (typeof value === 'string' && value.trim() === '') ||
-                   (value === '' && typeof value === 'string');
+    const isEmpty = value === null || value === undefined || (typeof value === 'string' && value.trim() === '') || value === '';
 
     // Required validation
     if (rules.required && isEmpty) {
@@ -249,148 +234,55 @@ export function validateField(fieldName: string, value: unknown, rules: FieldVal
 }
 
 // Validate data against rules
-const validateData = (
-    data: Record<string, unknown>, 
-    rules: Record<string, FieldValidationRule>,
-    options: { fieldsToValidate?: string[]; validateOnlyPresent?: boolean } = {}
-) => {
-    const allErrors: ValidationError[] = [];
-    const { fieldsToValidate, validateOnlyPresent = false } = options;
+const validateData = (data: Record<string, unknown>, rules: Record<string, FieldValidationRule>, debugLabel?: string) => {
+    const errors: ValidationError[] = [];
 
-    // Determine which fields to validate
-    const fieldsToCheck = fieldsToValidate ? fieldsToValidate : Object.keys(rules);
-
-    fieldsToCheck.forEach(field => {
-        const rule = rules[field];
-        if (!rule) return; // Skip if no rule defined for this field
-
-        const hasFieldInData = Object.prototype.hasOwnProperty.call(data, field);
+    // Check all rule fields, not just data fields - this ensures required fields are validated even if missing
+    Object.entries(rules).forEach(([field, rule]) => {
         const value = data[field];
-        
-        // Validation logic:
-        // 1. If validateOnlyPresent is true, only validate fields present in data
-        // 2. Otherwise, validate if field is present OR is required
-        const shouldValidate = validateOnlyPresent 
-            ? hasFieldInData 
-            : (hasFieldInData || rule.required);
-
-        if (shouldValidate) {
-            const error = validateField(field, value, rule);
-            if (error) {
-                allErrors.push(error);
-            }
+        const error = validateField(field, value, rule);
+        // if (debugLabel && rule.required) {
+        //     console.log(`- Field "${field}": value="${value}", required=${rule.required}, error=${error?.message || 'none'}`);
+        // }
+        if (error) {
+            errors.push(error);
         }
     });
 
-    return allErrors;
+    if (debugLabel) {
+        console.log(`- ${debugLabel} errors found: ${errors.length}`);
+    }
+
+    return errors;
 };
 
-// Validate user interactions only (only validates fields that user has touched)
-export function validateUserInteractions(courseData: Partial<Course>, courseSettings?: Partial<CourseSetting>): ValidationResult {
-    console.log('🔍 Validating user interactions only:');
-    console.log('📝 Course data:', courseData);
-    console.log('📝 Settings data:', courseSettings);
-
-    const errors = [
-        ...validateData(courseData as Record<string, unknown>, courseValidationRules as Record<string, FieldValidationRule>, { validateOnlyPresent: true }),
-        ...(courseSettings ? validateData(courseSettings as Record<string, unknown>, courseSettingValidationRules as Record<string, FieldValidationRule>, { validateOnlyPresent: true }) : [])
-    ];
-
-    if (errors.length > 0) {
-        console.log('❌ User interaction validation errors found:', errors.map(e => `${e.field}: ${e.message}`));
-    } else {
-        console.log('✅ All user interaction validation passed');
-    }
-
-    // Cross-field validation: date range (only if both fields are present)
-    if (courseSettings?.course_start_date && courseSettings?.end_date) {
-        const startDate = new Date(courseSettings.course_start_date);
-        const endDate = new Date(courseSettings.end_date);
-
-        if (startDate >= endDate) {
-            errors.push(createError('end_date', 'End date must be after start date', 'custom'));
-        }
-    }
-
-    return { isValid: errors.length === 0, errors };
-}
-
-// Validate form data (validates present fields and required fields for submission)
-export function validateFormData(courseData: Partial<Course>, courseSettings?: Partial<CourseSetting>): ValidationResult {
-    console.log('🔍 Validating complete form data fields:', Object.keys(courseData), Object.keys(courseSettings || {}));
-
-    const errors = [
-        ...validateData(courseData as Record<string, unknown>, courseValidationRules as Record<string, FieldValidationRule>, { validateOnlyPresent: false }),
-        ...(courseSettings ? validateData(courseSettings as Record<string, unknown>, courseSettingValidationRules as Record<string, FieldValidationRule>, { validateOnlyPresent: false }) : [])
-    ];
-
-    if (errors.length > 0) {
-        console.log('❌ Form validation errors found:', errors.map(e => `${e.field}: ${e.message}`));
-    } else {
-        console.log('✅ All form validation passed');
-    }
-
-    // Cross-field validation: date range
-    if (courseSettings?.course_start_date && courseSettings?.end_date) {
-        const startDate = new Date(courseSettings.course_start_date);
-        const endDate = new Date(courseSettings.end_date);
-
-        if (startDate >= endDate) {
-            errors.push(createError('end_date', 'End date must be after start date', 'custom'));
-        }
-    }
-
-    return { isValid: errors.length === 0, errors };
-}
-
-// Validate entire form data (comprehensive validation for submission)
+// Validate entire form data
 export function validateCourseData(courseData: Partial<Course>, courseSettings?: Partial<CourseSetting>): ValidationResult {
-    console.log('🔍 Validating course data fields:', Object.keys(courseData));
-    console.log('🔍 Validating course settings fields:', courseSettings ? Object.keys(courseSettings) : 'none');
 
-    const errors = [
-        ...validateData(courseData as Record<string, unknown>, courseValidationRules as Record<string, FieldValidationRule>),
-        ...(courseSettings ? validateData(courseSettings as Record<string, unknown>, courseSettingValidationRules as Record<string, FieldValidationRule>) : [])
-    ];
+    // Validate course fields
+    const courseErrors = validateData(courseData as Record<string, unknown>, courseValidationRules as Record<string, FieldValidationRule>, "Course");
 
-    if (errors.length > 0) {
-        console.log('❌ Validation errors found:', errors.map(e => `${e.field}: ${e.message}`));
-    } else {
-        console.log('✅ All validation passed');
-    }
+    // For course settings, check both the separate courseSettings object AND the courseData object
+    // because course settings fields might be mixed into the main form data
+    const combinedData = { ...courseSettings, ...courseData };
+    const settingErrors = validateData(combinedData as Record<string, unknown>, courseSettingValidationRules as Record<string, FieldValidationRule>, "CourseSettings");
+
+    const errors = [...courseErrors, ...settingErrors];
 
     // Cross-field validation: date range
-    if (courseSettings?.course_start_date && courseSettings?.end_date) {
-        const startDate = new Date(courseSettings.course_start_date);
-        const endDate = new Date(courseSettings.end_date);
+    const startDate = combinedData.course_start_date;
+    const endDate = combinedData.end_date;
 
-        if (startDate >= endDate) {
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (start >= end) {
             errors.push(createError('end_date', 'End date must be after start date', 'custom'));
         }
     }
 
     return { isValid: errors.length === 0, errors };
-}
-
-// Validate specific fields only (useful for real-time validation)
-export function validateSpecificFields(
-    fieldNames: string[], 
-    courseData: Partial<Course>, 
-    courseSettings?: Partial<CourseSetting>
-): ValidationError[] {
-    const courseErrors = validateData(
-        courseData as Record<string, unknown>, 
-        courseValidationRules as Record<string, FieldValidationRule>,
-        { fieldsToValidate: fieldNames, validateOnlyPresent: true }
-    );
-
-    const settingsErrors = courseSettings ? validateData(
-        courseSettings as Record<string, unknown>, 
-        courseSettingValidationRules as Record<string, FieldValidationRule>,
-        { fieldsToValidate: fieldNames, validateOnlyPresent: true }
-    ) : [];
-
-    return [...courseErrors, ...settingsErrors];
 }
 
 // Helper functions

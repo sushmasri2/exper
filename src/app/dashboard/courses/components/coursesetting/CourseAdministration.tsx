@@ -11,13 +11,26 @@ interface CourseAdministrationProps {
     formData: CourseSettingsPartialFormData;
     data: CourseSettingsData;
     actions: CourseSettingsActions;
-    onInputChange: (field: keyof CourseSettingsPartialFormData, value: string | number | boolean | string[]) => void;
+    onInputChange: (field: keyof CourseSettingsPartialFormData, value: string | string[]) => void;
 }
 
 export default function CourseAdministration({ courseData, formData, data, actions, onInputChange }: CourseAdministrationProps) {
     const { instructors, courseSettings, selectedInstructors } = data;
     const { setSelectedInstructors, validation: validationActions } = actions;
-
+    
+    // Helper function to format date from ISO string to yyyy-MM-dd format
+    const formatDateForInput = (dateString: string | null | undefined): string => {
+        if (!dateString) return '';
+        try {
+            // Handle ISO date format (2025-10-09T00:00:00.000Z) and convert to yyyy-MM-dd
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString().split('T')[0];
+        } catch (error) {
+            console.error('Error formatting date:', dateString, error);
+            return '';
+        }
+    };
     const scheduleOptions = [
         { label: 'Select Schedule', value: '' },
         { label: 'Daily', value: 'daily' },
@@ -27,8 +40,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
     ];
 
     const weekdays = [
-        { label: 'Monday', value: 'Monday' }, { label: 'Tuesday', value: 'Tuesday' }, { label: 'Wednesday', value: 'Wednesday' },
-        { label: 'Thursday', value: 'Thursday' }, { label: 'Friday', value: 'Friday' }, { label: 'Saturday', value: 'Saturday' }, { label: 'Sunday', value: 'Sunday' }
+        { label: 'Monday', value: 'Monday' }, { label: 'Tuesday', value: 'Tuesday' }, { label: 'Wednesday', value: 'Wednesday' },{ label: 'Thursday', value: 'Thursday' }, { label: 'Friday', value: 'Friday' }, { label: 'Saturday', value: 'Saturday' }, { label: 'Sunday', value: 'Sunday' }
     ];
     const months = [
         { label: 'January', value: '1' }, { label: 'February', value: '2' }, { label: 'March', value: '3' },
@@ -70,7 +82,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                     <label className="block text-lg font-medium">Kite ID</label>
                     <ValidatedInput
                         className="px-3 py-2"
-                        value={typeof formData.kite_id === 'string' ? formData.kite_id : (typeof courseData?.kite_id === 'string' ? courseData.kite_id : "")}
+                        value={formData.kite_id?.toString() || courseData?.kite_id?.toString() || ""}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const value = e.target.value;
                             onInputChange('kite_id', value);
@@ -209,7 +221,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                         label="Course Start Date"
                         type="date"
                         className="px-3 py-2"
-                        value={typeof formData.course_start_date === 'string' ? formData.course_start_date : (courseSettings?.course_start_date?.split('T')[0] ?? '')}
+                        value={typeof formData.course_start_date === 'string' ? formatDateForInput(formData.course_start_date) : formatDateForInput(courseSettings?.course_start_date)}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const value = e.target.value;
                             onInputChange('course_start_date', value);
@@ -225,7 +237,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                     <div className="flex gap-2">
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.duration_years === 'string' ? formData.duration_years : (courseSettings?.duration_years ?? "")}
+                            value={formData.duration_years || courseSettings?.duration_years?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('duration_years', value);
@@ -234,7 +246,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="Years" />
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.duration_months === 'string' ? formData.duration_months : (courseSettings?.duration_months ?? "")}
+                            value={formData.duration_months || courseSettings?.duration_months?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('duration_months', value);
@@ -243,7 +255,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="Months" />
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.duration_days === 'string' ? formData.duration_days : (courseSettings?.duration_days ?? "")}
+                            value={formData.duration_days || courseSettings?.duration_days?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('duration_days', value);
@@ -263,7 +275,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                     <div className="flex gap-2">
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.extendedvalidity_years === 'string' ? formData.extendedvalidity_years : (courseSettings?.extendedvalidity_years ?? "")}
+                            value={formData.extendedvalidity_years || courseSettings?.extendedvalidity_years?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('extendedvalidity_years', value);
@@ -272,7 +284,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="Years" />
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.extendedvalidity_months === 'string' ? formData.extendedvalidity_months : (courseSettings?.extendedvalidity_months ?? "")}
+                            value={formData.extendedvalidity_months || courseSettings?.extendedvalidity_months?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('extendedvalidity_months', value);
@@ -281,7 +293,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="Months" />
                         <ValidatedInput
                             className="px-3 py-2"
-                            value={typeof formData.extendedvalidity_days === 'string' ? formData.extendedvalidity_days : (courseSettings?.extendedvalidity_days ?? "")}
+                            value={formData.extendedvalidity_days || courseSettings?.extendedvalidity_days?.toString() || ""}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('extendedvalidity_days', value);
@@ -302,12 +314,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                         <Select2
                             options={scheduleOptions}
                             value={currentSchedule}
-                            onChange={(val: string | string[]) => {
-                                if (typeof val === 'string') {
-                                    onInputChange('schedule', val);
-                                    validationActions.validateSingleField('schedule', val);
-                                }
-                            }}
+                            onChange={(val: string | string[]) => typeof val === 'string' && onInputChange('schedule', val)}
                             placeholder="Select Schedule"
                             className="flex-1"
                             style={{ padding: '0.6rem' }}
@@ -315,7 +322,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                         <ValidatedInput
                             type="date"
                             className="px-3 py-2 flex-1"
-                            value={typeof formData.end_date === 'string' ? formData.end_date : (courseSettings?.end_date?.split('T')[0] ?? '')}
+                            value={typeof formData.end_date === 'string' ? formatDateForInput(formData.end_date) : formatDateForInput(courseSettings?.end_date)}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const value = e.target.value;
                                 onInputChange('end_date', value);
@@ -325,12 +332,6 @@ export default function CourseAdministration({ courseData, formData, data, actio
                             placeholder="End Date"
                         />
                     </div>
-                    {/* Display schedule validation error */}
-                    {validationActions.getFieldError('schedule') && (
-                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
-                            {validationActions.getFieldError('schedule')}
-                        </p>
-                    )}
                 </div>
             </div>
 
@@ -344,7 +345,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                 <ValidatedInput
                                     className="px-3 py-2 max-w-xs"
                                     label="Number of Days"
-                                    value={typeof formData.d_days === 'string' ? formData.d_days : (courseSettings?.d_days ?? "")}
+                                    value={formData.d_days || courseSettings?.d_days?.toString() || ""}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const value = e.target.value;
                                         onInputChange('d_days', value);
@@ -363,12 +364,9 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                         <ValidatedInput
                                             className="px-3 py-2"
                                             label="Number of Weeks"
-                                            type="number"
-                                            min="1"
                                             value={typeof formData.w_week === 'string' ? formData.w_week : (courseSettings?.w_week ?? "")}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                                 const value = e.target.value;
-                                                // Store as string for form state but it will be converted to number when sent to API
                                                 onInputChange('w_week', value);
                                                 validationActions.validateSingleField('w_week', value);
                                             }}
@@ -382,9 +380,7 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                             options={weekdays}
                                             value={getMultiValue(formData.w_days ?? courseSettings?.w_days)}
                                             onChange={(value) => {
-                                                const selectedValue = Array.isArray(value) ? value : [value];
-                                                // Store as comma-separated string to match the expected format
-                                                const stringValue = selectedValue.filter(v => v && v !== '').join(',');
+                                                const stringValue = Array.isArray(value) ? value.join(',') : value;
                                                 onInputChange('w_days', stringValue);
                                                 validationActions.validateSingleField('w_days', stringValue);
                                             }}
@@ -392,9 +388,8 @@ export default function CourseAdministration({ courseData, formData, data, actio
                                             placeholder="Select weekdays"
                                             style={{ padding: '0.6rem' }}
                                         />
-                                        {/* Display w_days validation error */}
                                         {validationActions.getFieldError('w_days') && (
-                                            <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                                            <p className="text-sm text-red-600 mt-1" role="alert">
                                                 {validationActions.getFieldError('w_days')}
                                             </p>
                                         )}

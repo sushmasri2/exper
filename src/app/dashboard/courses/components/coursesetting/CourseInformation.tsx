@@ -40,7 +40,7 @@ export default function CourseInformation({
     return (
         <div className="px-5 py-3">
             {/* Course Title */}
-            <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                     <ValidatedInput
                         type="text"
@@ -89,37 +89,6 @@ export default function CourseInformation({
                         required
                     />
                 </div>
-                <div>
-                    <label className="text-lg font-medium m-2">Short Code</label>
-                    <ValidatedInput
-                        type="text"
-                        placeholder="Short Code"
-                        value={typeof formData.short_code === "string" ? formData.short_code : (courseData?.short_code || "")}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const value = e.target.value;
-                            onInputChange('short_code', value);
-                            validationActions.validateSingleField('short_code', value);
-                        }}
-                        error={validationActions.getFieldError('short_code')}
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="text-lg font-medium m-2">Course Code</label>
-                    <ValidatedInput
-                        type="text"
-                        placeholder="Course Code"
-                        value={typeof formData.course_code === "string" ? formData.course_code : (typeof courseData?.course_code === "string" ? courseData.course_code : "")}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const value = e.target.value;
-                            onInputChange('course_code', value);
-                            validationActions.validateSingleField('course_code', value);
-                        }}
-                        error={validationActions.getFieldError('course_code')}
-                        required
-                    />
-                </div>
-
                 <div>
                     <label className="text-lg font-medium m-2">Course Type</label>
                     <Select2

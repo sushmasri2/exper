@@ -22,13 +22,10 @@ export default function AnalyticsAccessControl({
     onInputChange
 }: AnalyticsAccessControlProps) {
     const {
-        specialities,
         courseSettings,
-        selectedIntendedAudiences,
     } = data;
 
     const {
-        setSelectedIntendedAudiences,
         validation: validationActions
     } = actions;
 
@@ -165,7 +162,7 @@ export default function AnalyticsAccessControl({
                     )}
                 </div>
                 <div>
-                    <label className="text-lg font-medium m-2">Enable Index Tag</label>
+                    <label className="text-lg font-medium m-2">Enable Index Tags</label>
                     <Select2
                         options={[
                             { label: 'Yes', value: '1' },
@@ -188,26 +185,27 @@ export default function AnalyticsAccessControl({
                     )}
                 </div>
                 <div>
-                    <label className="text-lg font-medium m-2">Intended Audience</label>
+                    <label className="text-lg font-medium m-2">No Price</label>
                     <Select2
                         options={[
-                            ...specialities.map(specialty => ({
-                                label: specialty.name,
-                                value: specialty.id.toString()
-                            }))
+                            { label: 'Yes', value: '1' },
+                            { label: 'No', value: '0' },
                         ]}
-                        value={selectedIntendedAudiences}
+                        value={typeof formData?.no_price === 'string' ? formData.no_price : (courseData ? String(courseData.no_price) : '')}
                         onChange={(val: string | string[]) => {
-                            console.log('Intended Audience selection changed:', val);
-                            if (Array.isArray(val)) {
-                                setSelectedIntendedAudiences(val);
-                                onInputChange('intended_audiences', val);
+                            if (typeof val === 'string' && (val === '1' || val === '0')) {
+                                onInputChange('no_price' as keyof Course, val);
+                                validationActions.validateSingleField('no_price', val);
                             }
                         }}
-                        multiple={true}
-                        placeholder="Select Intended Audience"
+                        placeholder="Select Yes or No"
                         style={{ padding: '0.6rem' }}
                     />
+                    {validationActions.getFieldError('no_price') && (
+                        <p className="text-sm text-red-600 mt-1 px-3" role="alert">
+                            {validationActions.getFieldError('no_price')}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

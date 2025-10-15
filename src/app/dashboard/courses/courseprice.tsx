@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 // import { ValidatedInput } from "@/components/ui/ValidatedInput";
 import { Course } from "@/types/course";
-import { getCoursePricing } from '@/lib/courseprice-api';
+import { getCoursePricing, createCoursePricing, updateCoursePricing } from '@/lib/courseprice-api';
 import { CoursePricing } from '@/types/course-pricing';
 import { Button } from "@/components/ui/button";
 import { useCoursePricingValidation } from './hooks/useCoursePricingValidation';
 import { ValidatedInput } from "./components/ValidatedFormComponents";
+import { showToast } from "@/lib/toast";
 
 interface CoursePriceProps {
   courseData?: Course | null;
@@ -37,20 +38,122 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
     validationActions.validatePricingField('USD', field, value);
   };
 
-  const handleFormSubmit = () => {
-    const isValid = validationActions.validateAllPricing({
-      INR: formDataINR,
-      USD: formDataUSD
-    });
 
-    if (isValid) {
-      // Submit the form data
-      console.log('Submitting pricing data:', { INR: formDataINR, USD: formDataUSD });
-      // Add your API call here
-    } else {
-      console.log('Form validation failed');
+const handleFormSubmit = async () => {
+  if (!courseData?.uuid) {
+    setError('Course data is required');
+    return;
+  }
+
+  const isValid = validationActions.validateAllPricing({
+    INR: formDataINR,
+    USD: formDataUSD
+  });
+
+  if (isValid) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Helper function to ensure numeric values
+      const ensureNumber = (value: string | number | undefined | null): number | undefined => {
+        if (value === undefined || value === null || value === '') return undefined;
+        const num = Number(value);
+        return isNaN(num) ? undefined : num;
+      };
+
+      // Process INR pricing
+      if (Object.keys(formDataINR).length > 0) {
+        const inrData: Partial<CoursePricing> = {
+          currency: "INR",
+          price: ensureNumber(formDataINR.price) ?? 0,
+          status: 1
+        };
+
+        const inrFuturePrice = ensureNumber(formDataINR.future_price);
+        if (inrFuturePrice !== undefined) {
+          inrData.future_price = inrFuturePrice;
+        }
+        
+        if (formDataINR.future_price_effect_from) {
+          inrData.future_price_effect_from = formDataINR.future_price_effect_from;
+        }
+        
+        const inrExtendedPrice = ensureNumber(formDataINR.extended_validity_price);
+        if (inrExtendedPrice !== undefined) {
+          inrData.extended_validity_price = inrExtendedPrice;
+        }
+        
+        const inrMajorUpdatePrice = ensureNumber(formDataINR.major_update_price);
+        if (inrMajorUpdatePrice !== undefined) {
+          inrData.major_update_price = inrMajorUpdatePrice;
+        }
+
+        if (pricingINR?.uuid && pricingINR?.id) {
+          await updateCoursePricing(courseData.uuid, pricingINR.id, inrData);
+        } else {
+          await createCoursePricing(courseData.uuid, [inrData]);
+        }
+      }
+
+      // Process USD pricing
+      if (Object.keys(formDataUSD).length > 0) {
+        const usdData: Partial<CoursePricing> = {
+          currency: "USD",
+          price: ensureNumber(formDataUSD.price) ?? 0,
+          status: 1
+        };
+
+        const usdFuturePrice = ensureNumber(formDataUSD.future_price);
+        if (usdFuturePrice !== undefined) {
+          usdData.future_price = usdFuturePrice;
+        }
+        
+        if (formDataUSD.future_price_effect_from) {
+          usdData.future_price_effect_from = formDataUSD.future_price_effect_from;
+        }
+        
+        const usdExtendedPrice = ensureNumber(formDataUSD.extended_validity_price);
+        if (usdExtendedPrice !== undefined) {
+          usdData.extended_validity_price = usdExtendedPrice;
+        }
+        
+        const usdMajorUpdatePrice = ensureNumber(formDataUSD.major_update_price);
+        if (usdMajorUpdatePrice !== undefined) {
+          usdData.major_update_price = usdMajorUpdatePrice;
+        }
+
+
+        if (pricingUSD?.uuid && pricingUSD?.id) {
+          await updateCoursePricing(courseData.uuid, pricingUSD.id, usdData);
+        } else {
+          await createCoursePricing(courseData.uuid, [usdData]);
+        }
+      }
+
+      // Refresh pricing data after successful submission
+      const updatedData = await getCoursePricing(courseData.uuid);
+      const inr = updatedData.find((p: CoursePricing) => p.currency === "INR") || null;
+      const usd = updatedData.find((p: CoursePricing) => p.currency === "USD") || null;
+      setPricingINR(inr);
+      setPricingUSD(usd);
+      setFormDataINR(inr || {});
+      setFormDataUSD(usd || {});
+
+      showToast('Prices updated successfully', 'success');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      console.error('Error submitting pricing:', err);
+      showToast(`Failed to save pricing data: ${errorMessage}`, 'error');
+      setError(`Failed to save pricing data: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-  };
+  } else {
+    console.log('Form validation failed');
+    showToast('Please fix validation errors before submitting', 'error');
+  }
+};
 
   // Helper functions
   const isoToDateValidatedInput = (iso?: string | null): string => {
@@ -90,7 +193,11 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
         })
         .finally(() => setLoading(false));
     }
+
+
   }, [courseData?.uuid]);
+
+
 
   // Only show pricing when courseData.no_price is 0 (paid course)
   if (courseData?.no_price === 1) {
@@ -231,8 +338,10 @@ export default function CoursePrice({ courseData }: CoursePriceProps) {
           </Button>
         </div>
       </div>
-      {loading && <div>Loading course pricing...</div>}
-      {error && <div className="text-red-500">{error}</div>}
+      {error && (
+        <div className="text-red-500 font-semibold mt-2">{error}</div>
+      )}
+      {loading && (<div className="text-blue-500 font-semibold mt-2">Loading...</div>)}
     </>
   );
 }

@@ -278,8 +278,10 @@ function CategoriesContent() {
                                 {category.description && (
                                     <p className="text-sm text-gray-600 line-clamp-2">{category.description}</p>
                                 )}
-                                {category.position && (
-                                    <p className="text-xs text-gray-500">Position: {category.position}</p>
+                                {!category.position ? (
+                                <p></p>
+                                ) : (
+                                <p className="text-xs text-gray-500">Position: {category.position}</p>
                                 )}
                                 <Button variant="outline" size="sm" onClick={() => handleEdit(category.id)}><Edit className="w-4 h-4" /></Button>
                                 <Button variant="outline" size="sm" onClick={() => handleDeleteClick(category)}><Trash2 className="w-4 h-4" color="red" /></Button>

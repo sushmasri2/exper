@@ -6,13 +6,14 @@ import { Course } from "@/types/course";
 import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { ValidatedInput, ValidatedTextarea } from "./components/ValidatedFormComponents";
 import { useCourseSeoValidation } from "./hooks/useCourseSeoValidation";
+import {UpdateCourse} from "@/lib/courses-api";
+import { showToast } from "@/lib/toast";
 
 interface CourseSeoProps {
     courseData?: Course | null;
 }
 
-export default function Seo({ courseData }: CourseSeoProps) {
-    // Form data state for tracking changes
+export default function Seo({ courseData }: CourseSeoProps) {    // Form data state for tracking changes
     const [formData, setFormData] = useState<CourseSettingsPartialFormData>({});
 
     // Validation hook
@@ -26,10 +27,12 @@ export default function Seo({ courseData }: CourseSeoProps) {
 
     const handleFormSubmit = () => {
         const isValid = validationActions.validateAllSeo(formData);
-
-        if (isValid) {
+        
+        if (isValid && courseData?.uuid) {
             // Submit the form data
             console.log('Submitting SEO data:', formData);
+            UpdateCourse( courseData?.uuid, formData);
+            showToast('SEO details updated successfully', 'success');
             // Add your API call here
         } else {
             console.log('Form validation failed');

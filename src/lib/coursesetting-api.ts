@@ -43,6 +43,7 @@ export async function getCourseSettings(courseUuid: string): Promise<CourseSetti
 }
 export async function updateCourseSettings(courseUuid: string, settings: Partial<CourseSetting>): Promise<CourseSetting> {
     try {
+        // Use course UUID for update endpoint (matching the GET pattern)
         const fullUrl = `${baseUrl}/api/course-settings/${courseUuid}/`;
         const response = await fetchWithHeaders(fullUrl, {
             method: "PUT",
@@ -56,6 +57,17 @@ export async function updateCourseSettings(courseUuid: string, settings: Partial
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error Response:', errorText);
+            
+            // Try to parse error response for better error messages
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.message) {
+                    throw new Error(errorData.message);
+                }
+            } catch {
+                // If parsing fails, use the original error
+            }
+            
             throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
         }
 
@@ -66,6 +78,8 @@ export async function updateCourseSettings(courseUuid: string, settings: Partial
             return result.data;
         } else if (result.success !== undefined && !result.success) {
             throw new Error(result.message || 'Unknown API error');
+        } else if (result.status === "error") {
+            throw new Error(result.message || 'API returned error status');
         } else if (result.data) {
             return result.data;
         } else {
@@ -79,8 +93,7 @@ export async function updateCourseSettings(courseUuid: string, settings: Partial
         throw error;
     }
 }
-
-export async function createCourseSettings(courseUuid: string, settings: Partial<CourseSetting>): Promise<CourseSetting> {
+export async function createCourseSettings(courseUuid: string, settings: Partial<CourseSetting>): Promise<CourseSetting> { 
     try {
         const fullUrl = `${baseUrl}/api/course-settings/`;
         const payload = { course_uuid: courseUuid, ...settings };
@@ -96,6 +109,17 @@ export async function createCourseSettings(courseUuid: string, settings: Partial
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Error Response:', errorText);
+            
+            // Try to parse error response for better error messages
+            try {
+                const errorData = JSON.parse(errorText);
+                if (errorData.message) {
+                    throw new Error(errorData.message);
+                }
+            } catch {
+                // If parsing fails, use the original error
+            }
+            
             throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
         }   
         const result = await response.json();
@@ -104,7 +128,9 @@ export async function createCourseSettings(courseUuid: string, settings: Partial
             return result.data;
         } else if (result.success !== undefined && !result.success) {
             throw new Error(result.message || 'Unknown API error');
-        }   
+        } else if (result.status === "error") {
+            throw new Error(result.message || 'API returned error status');
+        }
 
         if (result.data) {
             return result.data;
@@ -119,5 +145,3 @@ export async function createCourseSettings(courseUuid: string, settings: Partial
         throw error;
     }
 }
-
-

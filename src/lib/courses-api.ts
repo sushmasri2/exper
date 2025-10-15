@@ -1,4 +1,4 @@
-import { Course,PaginatedCoursesResponse,CoursesFilterParams } from "@/types/course";
+import { Course, PaginatedCoursesResponse, CoursesFilterParams } from "@/types/course";
 import { fetchWithHeaders } from './api-client';
 import { withCacheInvalidation } from './cache-utils';
 
@@ -7,8 +7,6 @@ const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL_COURSE || '';
 export interface CreateCourseData {
   category_id: number;
   course_type_id: number;
-  course_code: string;
-  short_code: string;
   course_name: string;
   course_card_title: string;
   one_line_description: string;
@@ -21,53 +19,47 @@ interface ValidationError extends Error {
 
 export async function getCourses(): Promise<Course[]> {
   try {
-
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
     }
 
-    const fullUrl = `${baseUrl}/api/courses`;
+    let allCourses: Course[] = [];
+    let page = 1;
+    let hasMorePages = true;
 
-    // Try without interceptor first - use plain fetch
-    const response = await fetchWithHeaders(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      // Remove credentials if not needed
-    });
+    while (hasMorePages) {
+      const fullUrl = `${baseUrl}/api/courses?page=${page}`;
+      
+      const response = await fetchWithHeaders(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error Response:', errorText);
-      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+      const result = await response.json();
+      const courses = result.data || result;
+
+      if (courses.length === 0) {
+        hasMorePages = false;
+      } else {
+        allCourses = [...allCourses, ...courses];
+        
+        // Check if there are more pages (adjust based on your API response structure)
+        hasMorePages = result.last_page ? page < result.last_page : courses.length >= (result.per_page || 10);
+        page++;
+      }
     }
 
-    const result = await response.json();
-
-    // Check if response has the expected structure
-    if (result.success !== undefined && !result.success) {
-      throw new Error(result.message || 'Unknown API error');
-    }
-
-    // Handle different response structures
-    if (result.data) {
-      return result.data;
-    } else if (Array.isArray(result)) {
-      return result;
-    } else {
-      throw new Error('Unexpected response structure');
-    }
+    return allCourses;
 
   } catch (error) {
-    console.error('Error fetching course type:', error);
-
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Network error: Unable to connect to the API');
-    }
-
+    console.error('Error fetching courses:', error);
     throw error;
   }
 }
@@ -84,12 +76,11 @@ export async function getPaginatedCourses(params: CoursesFilterParams = {}): Pro
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.search) searchParams.append('search', params.search);
     if (params.category) searchParams.append('category', params.category);
-    if (params.courseType) searchParams.append('type', params.courseType);
+    if (params.type) searchParams.append('type', params.type.toString()); // Changed from courseType to type
+    if (params.courseType) searchParams.append('type', params.courseType); // Keep backward compatibility
     if (params.sortBy) searchParams.append('sortBy', params.sortBy);
 
     const fullUrl = `${baseUrl}/api/courses?${searchParams.toString()}`;
-    console.log('API Request URL:', fullUrl);
-    console.log('Filter params:', params);
 
     const response = await fetchWithHeaders(fullUrl, {
       method: 'GET',
@@ -198,7 +189,7 @@ export async function getPaginatedCourses(params: CoursesFilterParams = {}): Pro
   }
 }
 
-async function _UpdateCourse(courseUuid: string, courseData?: Partial<Course>): Promise<Course> {
+async function _UpdateCourse(courseUuid: string, courseData: Partial<Course>): Promise<Course> {
   try {
     if (!baseUrl) {
       throw new Error('API base URL is not defined');
@@ -212,7 +203,7 @@ async function _UpdateCourse(courseUuid: string, courseData?: Partial<Course>): 
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      body: courseData ? JSON.stringify(courseData) : undefined,
+      body: JSON.stringify(courseData),
       // Remove credentials if not needed
     });
     if (!response.ok) {
@@ -236,7 +227,7 @@ async function _UpdateCourse(courseUuid: string, courseData?: Partial<Course>): 
     }
 
   } catch (error) {
-    console.error('Error fetching course type:', error);
+    console.error('Error updating course:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error('Network error: Unable to connect to the API');
     }
@@ -262,11 +253,11 @@ async function _CreateCourse(courseData: CreateCourseData): Promise<Course> {
     if (!response.ok) {
       const errorText = await response.text();
       console.log('Error Response:', errorText);
-      
+
       // Try to parse validation errors from the response
       try {
         const errorData = JSON.parse(errorText);
-        
+
         // Handle field validation errors
         if (errorData.errors) {
           const validationError = new Error(errorData.message || 'Validation failed') as ValidationError;
@@ -274,40 +265,35 @@ async function _CreateCourse(courseData: CreateCourseData): Promise<Course> {
           validationError.isValidationError = true;
           throw validationError;
         }
-        
+
         // Handle specific constraint errors (like duplicate values)
         if (errorData.error && errorData.message) {
           const constraintError = new Error(errorData.message) as ValidationError;
           constraintError.isValidationError = true;
-          
+
           // Map specific constraint errors to form fields
           const constraintErrors: Record<string, string[]> = {};
-          
-          if (errorData.error === 'DUPLICATE_SHORT_CODE') {
-            constraintErrors['short_code'] = [errorData.message];
-          } else if (errorData.error === 'DUPLICATE_COURSE_CODE') {
-            constraintErrors['course_code'] = [errorData.message];
-          } else if (errorData.error === 'DUPLICATE_COURSE_NAME') {
+          if (errorData.error === 'DUPLICATE_COURSE_NAME') {
             constraintErrors['course_name'] = [errorData.message];
           }
           // Add more constraint mappings as needed
-          
+
           if (Object.keys(constraintErrors).length > 0) {
             constraintError.validationErrors = constraintErrors;
           }
-          
+
           throw constraintError;
         }
       } catch (parseError) {
         // If parsing fails, fall back to generic error
         console.log('Could not parse error response as JSON');
-        
+
         // Re-throw the validation/constraint error if it was already created
         if (parseError instanceof Error && (parseError as ValidationError).isValidationError) {
           throw parseError;
         }
       }
-      
+
       throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
     }
     const result = await response.json();
@@ -397,7 +383,7 @@ async function _GetCourseByUuid(courseUuid: string): Promise<Course> {
     }
 
     const result = await response.json();
-    
+
     // Check if response has the expected structure
     if (result.success !== undefined && !result.success) {
       throw new Error(result.message || 'Unknown API error');
@@ -445,7 +431,7 @@ async function _GetCourseByIdDirect(courseId: number): Promise<Course> {
     }
 
     const result = await response.json();
-    
+
     // Check if response has the expected structure
     if (result.success !== undefined && !result.success) {
       throw new Error(result.message || 'Unknown API error');
@@ -477,7 +463,7 @@ async function _GetCourseById(courseIdOrUuid: number | string): Promise<Course> 
   if (typeof courseIdOrUuid === 'string') {
     // If it's a string, assume it's a UUID and try fetching by UUID first
     console.log(`Attempting to fetch course by UUID: ${courseIdOrUuid}`);
-    
+
     try {
       const course = await _GetCourseByUuid(courseIdOrUuid);
       console.log(`Successfully fetched course by UUID: ${courseIdOrUuid}`);
@@ -489,16 +475,16 @@ async function _GetCourseById(courseIdOrUuid: number | string): Promise<Course> 
   } else {
     // If it's a number, we need to try UUID first (as requested), then fall back to ID
     console.log(`Attempting to fetch course for ID: ${courseIdOrUuid}`);
-    
+
     // Step 1: Try to find the UUID first by getting the course from the list
     try {
       console.log('Step 1: Getting courses list to find UUID...');
       const courses = await getCourses();
       const foundCourse = courses.find(c => c.id === courseIdOrUuid);
-      
+
       if (foundCourse && foundCourse.uuid) {
         console.log(`Found course in list with UUID: ${foundCourse.uuid}, now fetching by UUID...`);
-        
+
         // Step 2: Try fetching by UUID first (as requested)
         try {
           const course = await _GetCourseByUuid(foundCourse.uuid);
@@ -516,7 +502,7 @@ async function _GetCourseById(courseIdOrUuid: number | string): Promise<Course> 
       console.log('Failed to get courses list, trying direct ID fetch...', listError);
       // Fall through to direct ID fetch
     }
-    
+
     // Step 3: Fall back to direct ID fetch if UUID approach failed
     try {
       console.log(`Falling back to direct ID fetch for: ${courseIdOrUuid}`);

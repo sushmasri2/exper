@@ -29,8 +29,6 @@ interface CreateCourseProps {
 const FIELD_CONFIG = {
     category: { apiField: 'category_id', displayName: 'Category' },
     courseType: { apiField: 'course_type_id', displayName: 'Course Type' },
-    coursecode: { apiField: 'course_code', displayName: 'Course Code' },
-    shortCode: { apiField: 'short_code', displayName: 'Short Code' },
     name: { apiField: 'course_name', displayName: 'Course Name' },
     title: { apiField: 'title', displayName: 'Course Title' },
     cardTitle: { apiField: 'course_card_title', displayName: 'Course Card Title' },
@@ -48,17 +46,9 @@ const INITIAL_FORM_STATE = {
     cardTitle: '',
     description: ''
 };
-const generateCourseCode = (title: string) => {
-    if (!title.trim()) return '';
-    const prefix = title.trim().split(/\s+/).map(w => w[0].toUpperCase()).join('').substring(0, 4);
-    return `${prefix}-${Math.floor(Math.random() * 900) + 100}`;
-};
 
-const generateShortCode = (title: string) => {
-    if (!title.trim()) return '';
-    const prefix = title.trim().split(/\s+/).map(w => w[0].toUpperCase()).join('').substring(0, 3);
-    return `${prefix}${Math.floor(Math.random() * 900) + 100}`;
-};
+
+
 
 const generateCourseName = (courseTypeId: string, title: string, courseTypeList: CourseType[]) => {
     if (!courseTypeId || !title.trim()) return '';
@@ -127,8 +117,6 @@ const mapApiErrorsToForm = (apiErrors: Record<string, string[]>) => {
 const prepareApiData = (formData: typeof INITIAL_FORM_STATE) => ({
     category_id: parseInt(formData.category),
     course_type_id: parseInt(formData.courseType),
-    course_code: formData.coursecode.trim(),
-    short_code: formData.shortCode.trim(),
     course_name: formData.name.trim(),
     course_card_title: formData.cardTitle.trim(),
     one_line_description: formData.description.trim(),
@@ -166,10 +154,7 @@ export const CreatingCourse: React.FC<CreateCourseProps> = ({
         setFormData(prev => {
             const updatedData = { ...prev, title };
             
-            // Auto-generate course code and short code based on title
             if (title.trim()) {
-                updatedData.coursecode = generateCourseCode(title);
-                updatedData.shortCode = generateShortCode(title);
                 
                 // Auto-generate course name if course type is selected
                 if (prev.courseType) {
@@ -177,8 +162,6 @@ export const CreatingCourse: React.FC<CreateCourseProps> = ({
                 }
             } else {
                 // Clear generated fields if title is empty
-                updatedData.coursecode = '';
-                updatedData.shortCode = '';
                 updatedData.name = '';
             }
             
@@ -362,47 +345,6 @@ export const CreatingCourse: React.FC<CreateCourseProps> = ({
                     {errors.title && (
                         <p className="text-red-500 text-sm mt-1">{errors.title}</p>
                     )}
-                </div>
-
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Course Code <span className="text-red-500">*</span>
-                        </label>
-                        <div className="flex gap-2">
-                            <Input
-                                name="courseCode"
-                                placeholder="e.g., MBBS-101"
-                                value={formData.coursecode}
-                                onChange={(e) => {
-                                    setFormData(prev => ({ ...prev, coursecode: e.target.value }));
-                                    clearError('coursecode');
-                                }}
-                                className={`flex-1 ${errors.coursecode ? 'border-red-500' : ''} ${formData.coursecode && formData.title ? 'bg-gray-50' : ''}`}
-                            />
-                        </div>
-                        {errors.coursecode && (
-                            <p className="text-red-500 text-sm mt-1">{errors.coursecode}</p>
-                        )}
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Short Code <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            name="shortCode"
-                            placeholder="e.g., MB101"
-                            value={formData.shortCode}
-                            onChange={(e) => {
-                                setFormData(prev => ({ ...prev, shortCode: e.target.value }));
-                                clearError('shortCode');
-                            }}
-                            className={`w-full ${errors.shortCode ? 'border-red-500' : ''} ${formData.shortCode && formData.title ? 'bg-gray-50' : ''}`}
-                        />
-                        {errors.shortCode && (
-                            <p className="text-red-500 text-sm mt-1">{errors.shortCode}</p>
-                        )}
-                    </div>
                 </div>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                     <div>

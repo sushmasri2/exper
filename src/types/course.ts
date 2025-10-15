@@ -14,7 +14,6 @@ export interface CoursePricing {
 export interface Course {
   id: number;
   uuid: string;
-  short_code: string;
   course_name: string;
   title: string;
   course_card_title: string;
@@ -62,6 +61,7 @@ export interface CoursesFilterParams {
   search?: string;
   category?: string;
   courseType?: string;
+  type?: string | number; // Add type property for course type
   sortBy?: string;
   view?: 'grid' | 'list';
   [key: string]: string | number | undefined;

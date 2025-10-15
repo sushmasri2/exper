@@ -8,6 +8,8 @@ import { Modal } from "@/components/ui/modal";
 import { DeleteCourse } from "@/lib/courses-api";
 import { useState } from "react";
 import { showToast } from "@/lib/toast";
+import { useRouter } from "next/navigation";
+
 
 interface CourseListViewProps {
   courses: Course[];
@@ -20,6 +22,7 @@ export function CourseListView({
   onSort,
   onCourseDeleted
 }: CourseListViewProps) {
+  const router = useRouter();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,10 +43,11 @@ export function CourseListView({
       event.stopPropagation();
       // Navigate to edit page or open edit modal
       console.log('Edit course:', course.uuid);
+      router.push(`/dashboard/buildercourses/builderstructure?id=${course.id}`);
       // TODO: Implement edit functionality
-      showToast("Edit functionality to be implemented", "info");
+      // showToast("Edit functionality to be implemented", "info");
     };
-  };
+  };  
 
   const handleDelete = (course: Course) => {
     return (event: React.MouseEvent) => {

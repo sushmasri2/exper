@@ -20,6 +20,7 @@ interface TableProps<T> {
   onSort?: (accessor: string, direction: 'asc' | 'desc') => void;
   responsive?: boolean;
   className?: string;
+  bordered?: boolean;
 }
 
 type SortConfig = {
@@ -35,7 +36,8 @@ const Table = <T extends Record<string, unknown>>({
   loading = false,
   onSort,
   responsive = true,
-  className = ""
+  className = "",
+  bordered = false,
 }: TableProps<T>) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
 
@@ -105,7 +107,11 @@ const Table = <T extends Record<string, unknown>>({
     <div className={`w-full ${className}`}>
       {/* Desktop Table */}
       <div className={`${responsive ? 'hidden lg:block' : ''} overflow-x-auto`}>
-        <table className="w-full border-collapse bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+        <table
+          className={`w-full border-collapse bg-white dark:bg-gray-900 rounded-lg shadow-sm 
+            ${bordered ? 'border border-gray-200 dark:border-gray-700' : ''}`}
+        >
+
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               {columns.map((column) => (

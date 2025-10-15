@@ -76,11 +76,6 @@ export function CourseTableView({
             )
           },
           {
-            header: "Course Code",
-            accessor: "short_code",
-            sortable: true
-          },
-          {
             header: "Category",
             accessor: "category_name",
             render: (value) => String(value) || "-"

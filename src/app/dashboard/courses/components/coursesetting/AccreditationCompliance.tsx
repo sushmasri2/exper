@@ -22,11 +22,14 @@ export default function AccreditationCompliance({
 }: AccreditationComplianceProps) {
     const {
         courseSettings,
+        specialities,
         accreditationOptions,
-        selectedAccreditationPartners
+        selectedAccreditationPartners,
+        selectedIntendedAudiences,
     } = data;
 
     const {
+        setSelectedIntendedAudiences,
         setSelectedAccreditationPartners,
         validation: validationActions
     } = actions;
@@ -82,6 +85,30 @@ export default function AccreditationCompliance({
                             }
                         }}
                         placeholder="Select Accreditation Partners List"
+                        style={{ padding: '0.6rem' }}
+                    />
+                </div>
+                     <div>
+                    <label className="text-lg font-medium m-2">Intended Audience</label>
+                    <Select2
+                        options={[
+                            ...specialities.map(specialty => ({
+                                label: specialty.name,
+                                value: specialty.id.toString()
+                            }))
+                        ]}
+                        value={selectedIntendedAudiences}
+                        onChange={(val: string | number | (string | number)[]) => {
+                            console.log('Intended Audience selection changed:', val);
+                            if (Array.isArray(val)) {
+                                // Ensure all values are strings
+                                const stringVals = val.map(v => v.toString());
+                                setSelectedIntendedAudiences(stringVals);
+                                onInputChange('intended_audiences', stringVals);
+                            }
+                        }}
+                        multiple={true}
+                        placeholder="Select Intended Audience"
                         style={{ padding: '0.6rem' }}
                     />
                 </div>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Course } from "@/types/course";
 import { CourseSettingsPartialFormData } from "@/types/course-settings-form";
 import { CourseSettingsData, CourseSettingsActions } from "../../hooks/useCourseSettingsData";
@@ -23,9 +21,8 @@ export default function CourseContent({
     actions,
     onInputChange
 }: CourseContentProps) {
-    const { courseSettings, faqs, courses } = data;
+    const { courseSettings, courses } = data;
     const { validation: validationActions } = actions;
-    const [faqOpenItems, setFaqOpenItems] = useState<string[]>([]);
 
     return (
         <div className="px-5 py-3">
@@ -43,16 +40,16 @@ export default function CourseContent({
                                 }))
                         ]}
                         value={
-                            // First try to get from formData.child_course, then fall back to courseSettings.children_course
+                            // First try to get from formData.children_course, then fall back to courseSettings.children_course
                             (() => {
-                                const selectedChild = typeof formData.child_course === 'string' ? formData.child_course :
+                                const selectedChild = typeof formData.children_course === 'string' ? formData.children_course :
                                     (courseSettings && typeof courseSettings.children_course === 'string' ? courseSettings.children_course : '');
                                 return selectedChild;
                             })()
                         }
                         onChange={(val: string | string[]) => {
                             if (typeof val === 'string') {
-                                onInputChange('child_course', val);
+                                onInputChange('children_course', val);
                             }
                         }}
                         placeholder="Select Child Course"
@@ -160,31 +157,6 @@ export default function CourseContent({
                         rows={3}
                     />
                 </div>
-            </div>
-            <div>
-                <label className="text-lg font-medium m-2">FAQs</label>
-                <Accordion type="multiple" value={faqOpenItems} onValueChange={setFaqOpenItems} >
-                    {faqs.length > 0 ? (
-                        faqs.map((faq) => (
-                            <AccordionItem
-                                key={faq.uuid}
-                                className="border rounded-lg mt-3"
-                                value={`faq-${faq.uuid}`}
-                            >
-                                <AccordionTrigger className="flex bg-[#f8f9fa] px-3">
-                                    <h4>{faq.question}</h4>
-                                </AccordionTrigger>
-                                <AccordionContent className="px-3 py-2">
-                                    <p>{faq.answers}</p>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))
-                    ) : (
-                        <div className="text-gray-500 italic mt-3 px-3">
-                            No FAQs available for this course.
-                        </div>
-                    )}
-                </Accordion>
             </div>
         </div>
     );

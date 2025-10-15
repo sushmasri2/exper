@@ -186,14 +186,12 @@ export function useApiCache() {
     patterns.forEach(pat => {
       // If it's an exact match, delete directly
       if (apiCache.has(pat)) {
-        console.log(`[Cache INVALIDATE] Exact match: ${pat}`);
         apiCache.delete(pat);
       } else {
         // If it's a pattern, find and delete matching keys
         const keysToDelete = apiCache.getKeys().filter((key: string) =>
           key.includes(pat) || pat.includes(key)
         );
-        console.log(`[Cache INVALIDATE] Pattern '${pat}' matches: [${keysToDelete.join(', ')}]`);
         keysToDelete.forEach((key: string) => apiCache.delete(key));
       }
     });

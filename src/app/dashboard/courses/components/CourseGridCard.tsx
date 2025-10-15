@@ -48,11 +48,6 @@ export function CourseGridCard({
           <div className="flex justify-between items-start">
             {/* Left - Title + Code */}
             <div>
-              {course.short_code && (
-                <span className="inline-block bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full font-medium">
-                  {course.short_code}
-                </span>
-              )}
               <h2 className="text-lg font-bold mt-2 leading-snug line-clamp-2 h-[3rem]">{course.course_name}</h2>
             </div>
 

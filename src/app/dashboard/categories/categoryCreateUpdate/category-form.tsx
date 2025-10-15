@@ -242,18 +242,6 @@ export default function CategoryCreateUpdateForm() {
                                 <p className="text-red-500 text-sm mt-1">{validationErrors.slug}</p>
                             )}
                         </div>
-                        <div>
-                            <label className="font-semibold mb-2">
-                                Short Code
-                            </label>
-                            <Input
-                                type="text"
-                                name="short_code"
-                                value={formData.short_code || ''}
-                                onChange={handleInputChange}
-                                placeholder="e.g., MED, SURG"
-                            />
-                        </div>
                     </div>
                     <div>
                         <label className="font-semibold mb-2">Description</label>

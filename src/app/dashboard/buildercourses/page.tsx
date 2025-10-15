@@ -187,11 +187,10 @@ function BuilderCoursesContent() {
   return (
     <div className="min-h-screen bg-background" style={{
       margin: '-1rem',
-      padding: '0',
-      width: 'calc(100% + 2rem)'
+      padding: '0'
     }}>
       {/* Header and Filters */}
-      <div className="sticky top-0 z-[15] bg-background/95 shadow-sm border-b backdrop-blur-sm">
+      <div className="top-0 z-[15] bg-background/95 shadow-sm border-b backdrop-blur-sm">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-semibold text-foreground">

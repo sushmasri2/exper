@@ -65,24 +65,103 @@ export async function getCoursePricing(courseUuid: string): Promise<CoursePricin
     throw error;
   }
 }
-
-export async function updateCoursePricing(courseUuid: string, pricingData: Partial<CoursePricing>[]): Promise<void> {
+// In courseprice-api.ts
+export async function updateCoursePricing(
+  courseUuid: string,
+  pricingId: number,
+  pricingData: Partial<CoursePricing>
+): Promise<void> {
   try {
-    const fullUrl = `${baseUrl}/api/courses/${courseUuid}/pricing`;
+    const fullUrl = `${baseUrl}/api/courses/${courseUuid}/pricing/${pricingId}`;
+
+    // Validate that currency is present and not undefined if it exists
+    if (pricingData.currency && pricingData.currency !== undefined) {
+      pricingData.currency = String(pricingData.currency).toUpperCase();
+    }
+
+    // Ensure clean JSON serialization
+    const cleanData = JSON.parse(JSON.stringify(pricingData));
+
+
     const response = await fetchWithHeaders(fullUrl, {
       method: 'PUT',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ pricing: pricingData }),
+      body: JSON.stringify(cleanData),
     });
     if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+      let errorMessage = `HTTP error ${response.status}: ${response.statusText}`;
+      try {
+        const errorBody = await response.json();
+        console.error('API Error Response:', errorBody);
+        if (errorBody.message) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+        if (errorBody.errors) {
+          errorMessage += ` - Validation errors: ${JSON.stringify(errorBody.errors)}`;
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
     }
   } catch (error) {
     console.error('Error updating course pricing:', error);
     throw error;
   }
+}
 
+export async function createCoursePricing(
+  courseUuid: string,
+  pricingData: Partial<CoursePricing>[]
+): Promise<void> {
+  try {
+    const fullUrl = `${baseUrl}/api/courses/${courseUuid}/pricing`;
+
+    // Validate that currency is always present and not undefined
+    const validatedPricingData = pricingData.map(item => {
+      if (!item.currency) {
+        throw new Error('Currency field is required and cannot be undefined');
+      }
+      return {
+        ...item,
+        currency: String(item.currency).toUpperCase() // Ensure it's a string and uppercase
+      };
+    });
+
+    // Send the first item directly (not wrapped in array or pricing object)
+    const payload = validatedPricingData[0];
+
+
+    const response = await fetchWithHeaders(fullUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload), // Send the object directly
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP error ${response.status}: ${response.statusText}`;
+      try {
+        const errorBody = await response.json();
+        console.error('API Error Response:', errorBody);
+        if (errorBody.message) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+        if (errorBody.errors) {
+          errorMessage += ` - Validation errors: ${JSON.stringify(errorBody.errors)}`;
+        }
+      } catch (parseError) {
+        console.error('Could not parse error response:', parseError);
+      }
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error('Error creating course pricing:', error);
+    throw error;
+  }
 }

@@ -19,31 +19,43 @@ const AccordionItem = React.forwardRef<
 ))
 AccordionItem.displayName = "AccordionItem"
 
+interface AccordionTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {
+  arrowPosition?: "left" | "right"
+}
+
 const AccordionTrigger = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
->(( { className, children, ...props }, ref) => (
+  AccordionTriggerProps
+>(({ className, children, arrowPosition = "right", ...props }, ref) => {
+  const ArrowIcon = () => (
+    <span className={cn(arrowPosition === "left" ? "mr-2" : "ml-2")}>
+      {/* Closed state */}
+      <ChevronRight className="h-4 w-4 group-data-[state=open]:hidden" />
+      {/* Open state */}
+      <ChevronUp className="h-4 w-4 hidden group-data-[state=open]:block" />
+    </span>
+  )
+
+  return (
     <AccordionPrimitive.Header className="flex">
       <AccordionPrimitive.Trigger
         ref={ref}
         className={cn(
-          "group flex flex-1 items-center justify-between py-4 text-lg font-medium transition-all data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg ",
+          "group flex flex-1 items-center py-4 text-lg font-medium transition-all data-[state=closed]:rounded-lg data-[state=open]:rounded-t-lg",
+          arrowPosition === "left" ? "justify-start" : "justify-between",
           className
         )}
         {...props}
       >
+        {arrowPosition === "left" && <ArrowIcon />}
         {children}
-        <span className="ml-2">
-          {/* Closed state */}
-          <ChevronRight className="h-4 w-4 group-data-[state=open]:hidden" />
-          {/* Open state */}
-          <ChevronUp className="h-4 w-4 hidden group-data-[state=open]:block" />
-        </span>
+        {arrowPosition === "right" && <ArrowIcon />}
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
-  ))
+  )
+})
 AccordionTrigger.displayName = "AccordionTrigger"
-
 
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,

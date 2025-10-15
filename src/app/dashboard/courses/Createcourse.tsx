@@ -18,17 +18,19 @@ import Seo from "./courseseo";
 import RecommendedCourses from "./recommendedcourses";
 import Patrons from "./coursepatrons";
 import Logs from "./courselogs";
+import FAQs from "./coursefaqs";
 
 const tabList = [
   { value: "coursestructure", label: "Course Structure", Component: CourseStructure, path: "coursestructure" },
   { value: "coursesettings", label: "Course Settings", Component: CourseSettings, path: "coursesettings" },
   { value: "courseprice", label: "Course Price", Component: CoursePrice, path: "courseprice" },
   { value: "seo", label: "SEO", Component: Seo, path: "seo" },
+  { value: "faqs", label: "FAQs", Component: FAQs, path: "faqs" },
   { value: "recommendedcourses", label: "Recommended Courses", Component: RecommendedCourses, path: "recommendedcourses" },
   { value: "patrons", label: "Patrons", Component: Patrons, path: "patrons" },
   { value: "logs", label: "Logs", Component: Logs, path: "logs" },
 ];
-const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo", "recommendedcourses", "patrons", "logs"];
+const validTabs = ["coursestructure", "coursesettings", "courseprice", "seo","faqs", "recommendedcourses", "patrons", "logs"];
 
 export default function CreateCourse() {
   const router = useRouter();

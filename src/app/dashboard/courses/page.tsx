@@ -45,10 +45,10 @@ function CoursesContent() {
   useEffect(() => {
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
-    const courseType = searchParams.get('courseType') || '';
+    const courseType = searchParams.get('type') || '';
     const sortBy = searchParams.get('sortBy') || 'newest';
     const viewMode = searchParams.get('view') || 'grid';
-
+    
     setSearchQuery(search);
     setSelectedCategory(category);
     setSelectedCourseType(courseType);
@@ -60,13 +60,17 @@ function CoursesContent() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        // Force fresh fetch for course types to debug cache issue
+        invalidateRelatedCache('course-types');
+        
         const [categories, courseTypes] = await Promise.all([
           cachedApiCall(() => getCoursesCategory(), { cacheKey: 'categories' }),
           cachedApiCall(() => getCoursesType(), { cacheKey: 'course-types' })
         ]);
 
+        const activeCourseTypes = courseTypes.filter(c => c.status === 1);
         setCourseCategoryList(categories.filter(c => c.status === 1));
-        setCourseTypeList(courseTypes.filter(c => c.status === 1));
+        setCourseTypeList(activeCourseTypes);
       } catch (error) {
         console.error('Failed to load initial data:', error);
       } finally {
@@ -75,37 +79,44 @@ function CoursesContent() {
     };
 
     loadInitialData();
-  }, [cachedApiCall]);
+  }, [cachedApiCall, invalidateRelatedCache]);
 
   // Load courses with filters
   const loadCourses = useCallback(async (params: CoursesFilterParams = {}) => {
     setSearchLoading(true);
     try {
       const currentPage = parseInt(searchParams.get('page') || '1');
-      const search = searchParams.get('search') || '';
       const category = searchParams.get('category') || '';
-      const courseType = searchParams.get('courseType') || '';
-      const sortBy = searchParams.get('sortBy') || 'newest';
+      const courseType = searchParams.get('type') || '';
+      const search = searchParams.get('search') || '';
 
+      // Send API parameters that the backend expects: page, category, type, search
       const filterParams: CoursesFilterParams = {
         page: currentPage,
-        limit: itemsPerPage,
-        search: search || undefined,
-        category: category || undefined,
-        courseType: courseType || undefined,
-        sortBy: sortBy || undefined,
+        ...(category && { category: category }),
+        ...(courseType && { type: courseType }),
+        ...(search && { search: search }), // Add search parameter
         ...params
       };
 
-      const cacheKey = `paginated-courses-limit-${itemsPerPage}`;
+      // Create cache key based only on API params
+      const apiParamsForCache = {
+        page: filterParams.page,
+        ...(filterParams.category && { category: filterParams.category }),
+        ...(filterParams.type && { type: filterParams.type }),
+        ...(filterParams.search && { search: filterParams.search })
+      };
+      const cacheKey = `paginated-courses-${JSON.stringify(apiParamsForCache)}`;
+
+      // Invalidate cache when filters change (not just pagination)
+      if (!params.page) {
+        invalidateRelatedCache('courses');
+      }
 
       const response = await cachedApiCall(
         () => getPaginatedCourses(filterParams),
         { cacheKey }
       );
-      console.log('Fetched paginated courses:', response);
-      console.log('Filter params used:', filterParams);
-      console.log('Current URL search params:', searchParams.toString());
 
       setCoursesData(response);
     } catch (error) {
@@ -114,7 +125,7 @@ function CoursesContent() {
     } finally {
       setSearchLoading(false);
     }
-  }, [searchParams, cachedApiCall, itemsPerPage]);
+  }, [searchParams, cachedApiCall, invalidateRelatedCache]);
 
   // Load courses when URL params change
   useEffect(() => {
@@ -149,7 +160,7 @@ function CoursesContent() {
     const filterParams = {
       search: searchQuery,
       category: selectedCategory,
-      courseType: selectedCourseType,
+      type: selectedCourseType,
       sortBy: sortByOption,
       view: view
     };
@@ -158,14 +169,11 @@ function CoursesContent() {
 
   // Handle pagination
   const handlePageChange = (url: string, page: number) => {
-    console.log('🔄 handlePageChange called:', { url, page });
-    console.log('📄 Current searchParams:', searchParams.toString());
     
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.set('page', page.toString());
     const finalUrl = `/dashboard/courses?${newSearchParams.toString()}`;
     
-    console.log('🎯 Navigating to:', finalUrl);
     router.push(finalUrl);
   };
 
@@ -177,6 +185,7 @@ function CoursesContent() {
   // Handle course deleted
   const handleCourseDeleted = async () => {
     invalidateRelatedCache('courses');
+    invalidateRelatedCache('all'); // Clear all related caches
     await loadCourses();
   };
 
@@ -184,11 +193,10 @@ function CoursesContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!loading) {
-        console.log('⏰ Applying filters after debounce...');
         // Only apply if we're not just changing pages - check if current URL params match form state
         const currentSearch = searchParams.get('search') || '';
         const currentCategory = searchParams.get('category') || '';
-        const currentCourseType = searchParams.get('courseType') || '';
+        const currentCourseType = searchParams.get('type') || ''; // Changed from 'courseType' to 'type'
         const currentSortBy = searchParams.get('sortBy') || 'newest';
         const currentView = searchParams.get('view') || 'grid';
         

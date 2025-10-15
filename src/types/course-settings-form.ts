@@ -8,8 +8,6 @@ export interface CourseSettingsFormData {
   // Primary fields from Courses model
   id?: number;
   uuid?: string;
-  course_code?: string;
-  short_code?: string;
   course_name?: string;
   title?: string;
   course_card_title?: string;
